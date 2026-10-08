@@ -28,12 +28,12 @@ jobs:
         run: |
           XLS=$(ls ../schedule/Coex_Schedule_*.xls | sort | tail -1)
           echo "사용할 엑셀: $XLS"
-          python update_events.py "$XLS"
+          python update_events.py --replace "$XLS"
 
       - name: Commit changes
         run: |
           rm -f Vimeo-Expoportal/events/index.json.bak
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Vimeo-Expoportal/events
+          git add -A Vimeo-Expoportal/events
           git diff --cached --quiet || (git commit -m "행사 목록 자동 갱신" && git push)
