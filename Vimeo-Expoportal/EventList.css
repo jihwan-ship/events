@@ -1,0 +1,101 @@
+/* 행사 일정 페이지 (COEX 행사 일정 화면 구성: 왼쪽 필터 + 오른쪽 카드/캘린더).
+   헤더/푸터 스타일은 ../Vimeo-CSS/common.css 가 담당하므로 여기서는 본문(.ev-*)만 꾸민다. */
+.ev-page {
+  --ev-ink: #0b0b0d;
+  --ev-soft: #667085;
+  --ev-faint: #9aa1ad;
+  --ev-line: #1a1a1f;
+  --ev-hair: #e3e5ea;
+  --ev-accent: #1ab7ea;
+  --ev-accent-ink: #0c7ba8;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+  color: var(--ev-ink);
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+  padding: 140px 0 96px;
+}
+.ev-page *, .ev-page *::before, .ev-page *::after { box-sizing: border-box; }
+.ev-page a { color: inherit; text-decoration: none; }
+.ev-page button, .ev-page input { font-family: inherit; }
+.ev-wrap { max-width: 1480px; margin: 0 auto; padding: 0 24px; }
+.ev-title { margin: 0 0 32px; font-size: clamp(30px, 4vw, 42px); font-weight: 800; letter-spacing: -0.02em; }
+
+/* 툴바 */
+.ev-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.ev-views { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: #f0f1f4; }
+.ev-views button { padding: 8px 16px; border: 0; border-radius: 999px; background: transparent; font-size: 13px; font-weight: 600; color: var(--ev-soft); cursor: pointer; }
+.ev-views button.on { background: #000; color: #fff; }
+.ev-count { margin: 0; font-size: 13px; color: var(--ev-soft); }
+
+/* 리스트형: 선으로 나뉜 3열 카드 */
+.ev-grid { display: grid; grid-template-columns: repeat(4, 1fr); border-left: 1px solid var(--ev-line); }
+.ev-card {
+  position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 40px;
+  min-height: 230px; padding: 20px 20px 18px; background: #fff;
+  border-top: 1px solid var(--ev-line); border-right: 1px solid var(--ev-line);
+}
+.ev-grid > .ev-card:nth-last-child(-n+4) { border-bottom: 1px solid var(--ev-line); }
+a.ev-card:hover { background: #f4fbfe; }
+.ev-card.is-soon .ev-name { color: #4b5160; }
+.ev-cat { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.ev-cat i { width: 6px; height: 6px; border-radius: 50%; background: var(--ev-faint); }
+.ev-cat[data-cat="Exhibition"] i { background: #e8318b; }
+.ev-cat[data-cat="Convention"] i { background: #8b4fe0; }
+.ev-cat[data-cat="Pop-up/Event"] i { background: #a8a000; }
+.ev-name { margin: 12px 0 0; font-size: 21px; font-weight: 700; line-height: 1.45; letter-spacing: -0.01em; word-break: keep-all; }
+.ev-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; font-size: 13px; }
+.ev-date { font-weight: 600; }
+.ev-venue { text-align: right; font-weight: 700; }
+.ev-tag { position: absolute; top: 14px; right: 14px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.ev-tag.is-go { background: rgba(26,183,234,.14); color: var(--ev-accent-ink); }
+.ev-tag.is-wait { background: #eef0f4; color: var(--ev-faint); }
+.ev-empty { grid-column: 1 / -1; padding: 72px 16px; text-align: center; color: var(--ev-soft); border-top: 1px solid var(--ev-line); border-right: 1px solid var(--ev-line); border-bottom: 1px solid var(--ev-line); }
+.ev-empty strong { display: block; margin-bottom: 8px; font-size: 17px; color: var(--ev-ink); }
+
+.ev-pager { display: flex; justify-content: center; gap: 6px; margin-top: 28px; }
+.ev-pager button { min-width: 32px; height: 32px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; font-size: 13px; cursor: pointer; }
+.ev-pager button.on { background: #f0e6e4; font-weight: 700; }
+.ev-pager button:disabled { color: #c3c6cd; cursor: default; }
+
+/* 캘린더형 */
+.ev-cal-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.ev-cal-head strong { font-size: 34px; font-weight: 800; letter-spacing: -0.01em; }
+.ev-cal-head button { width: 34px; height: 34px; border: 1px solid var(--ev-hair); border-radius: 50%; background: #fff; font-size: 18px; cursor: pointer; }
+.ev-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 2px solid var(--ev-ink); }
+.ev-cal .dow { padding: 10px 8px; font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--ev-ink); }
+.ev-cal .dow:first-child, .ev-cal .day:nth-child(7n+8) .num { color: #e5322d; }
+.ev-cal .dow:nth-child(7), .ev-cal .day:nth-child(7n+14) .num { color: #2f6fe4; }
+.ev-cal .day { min-height: 150px; padding: 10px 8px; border-bottom: 1px solid var(--ev-hair); }
+.ev-cal .day.out { opacity: .45; }
+.ev-cal .num { display: block; margin-bottom: 8px; font-size: 18px; font-weight: 700; }
+.ev-cal .day.today .num { display: inline-block; min-width: 26px; padding: 0 6px; border-radius: 999px; background: #000; color: #fff; text-align: center; }
+.ev-cal .item { display: flex; gap: 4px; align-items: flex-start; margin-top: 5px; font-size: 13px; line-height: 1.4; word-break: keep-all; }
+.ev-cal .item i { flex: none; width: 6px; height: 6px; margin-top: 5px; border-radius: 50%; background: var(--ev-faint); }
+.ev-cal .item[data-cat="Exhibition"] i { background: #e8318b; }
+.ev-cal .item[data-cat="Convention"] i { background: #8b4fe0; }
+.ev-cal .item[data-cat="Pop-up/Event"] i { background: #a8a000; }
+.ev-cal a.item:hover { text-decoration: underline; }
+.ev-cal span.item { color: #5a6070; }
+
+@media (max-width: 1200px) {
+  .ev-grid { grid-template-columns: repeat(3, 1fr); }
+  .ev-grid > .ev-card:nth-last-child(-n+4) { border-bottom: 0; }
+  .ev-grid > .ev-card:nth-last-child(-n+3) { border-bottom: 1px solid var(--ev-line); }
+}
+@media (max-width: 820px) {
+  .ev-grid { grid-template-columns: repeat(2, 1fr); }
+  .ev-grid > .ev-card:nth-last-child(-n+3) { border-bottom: 0; }
+  .ev-grid > .ev-card:nth-last-child(-n+2) { border-bottom: 1px solid var(--ev-line); }
+  .ev-cal .day { min-height: 110px; }
+}
+@media (max-width: 600px) {
+  .ev-page { padding-top: 104px; }
+  .ev-wrap { padding: 0 16px; }
+  .ev-grid { grid-template-columns: 1fr; }
+  .ev-grid > .ev-card { border-bottom: 0; }
+  .ev-grid > .ev-card:last-child { border-bottom: 1px solid var(--ev-line); }
+  .ev-card { min-height: 160px; }
+  .ev-cal .day { min-height: 78px; padding: 6px 3px; }
+  .ev-cal .item { font-size: 10.5px; }
+  .ev-cal .item i { display: none; }
+}

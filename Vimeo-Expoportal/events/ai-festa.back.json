@@ -1,0 +1,10 @@
+{
+  "pageTitle": "인공지능 페스타 2026 영상 포털",
+  "eyebrow": "AI FESTA 2026 VIDEO PORTAL",
+  "logo": "",
+  "title": "인공지능 페스타 2026",
+  "subtitle": "AI, 현실이되다. 모두의 AI\n행사 영상을 검색하고 Ask AI로 내용을 물어보세요.",
+  "searchPlaceholder": "인공지능 페스타 영상을 검색하세요.",
+  "videosUrl": "events/ai-festa-videos.json",
+  "popularTerms": ["AI"]
+}

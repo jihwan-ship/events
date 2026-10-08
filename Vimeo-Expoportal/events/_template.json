@@ -1,0 +1,12 @@
+{
+  "pageTitle": "행사 이름 | 영상 포털",
+  "eyebrow": "EVENT VIDEO PORTAL",
+  "logo": "",
+  "logoAlt": "",
+  "title": "행사 이름",
+  "subtitle": "행사 한 줄 소개\n두 번째 줄 소개 (\\n 으로 줄바꿈)",
+  "searchPlaceholder": "영상을 검색하세요.",
+  "heroImage": "",
+  "videosUrl": "events/_template-videos.json",
+  "popularTerms": []
+}

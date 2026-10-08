@@ -1,0 +1,345 @@
+<!doctype html>
+          <html lang="ko">
+          <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>COEX 전시 참가사 데모 페이지</title>
+          <link rel="stylesheet" href="../Vimeo-CSS/common.css?v=1" />
+          <link rel="stylesheet" href="ExpoPortal.css?v=31" />
+          <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
+          </head>
+          <body>
+          <a class="skip-link" href="#grid">영상 목록으로 바로가기</a>
+          <div class="Header">
+      <div class="header-lastImg">
+        <a href="../Vimeo-MainPage/main_page.html">
+          <img src="../img/image (1).png" alt="logo" />
+        </a>
+      </div>
+
+      <ul class="header-ul">
+        <li><a href="../Vimeo-SubPage/SubPage.html">솔루션</a></li>
+        <li><a href="../Vimeo-plan/plan.html">플랜 소개</a></li>
+        <li><a href="../Vimeo-company/company.html">회사 소개</a></li>
+        <li><a href="../Vimeo-ApiPage/ApiPage.html">API 소개</a></li>
+        <li><a href="../Vimeo-EstimatePage/EstimatePage.html">견적 문의</a></li>
+      </ul>
+
+      <button
+        class="menu-btn"
+        type="button"
+        id="menuBtn"
+        aria-label="메뉴 열기"
+        aria-controls="mobileNav"
+        aria-expanded="false"
+      >        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </button>
+
+      <div class="header-phone">
+        <div class="header-call">
+          <p>문의 번호</p>
+          <p>02-535-1809</p>
+        </div>
+        <a
+          href="https://www.ikss.kr/kor/main/"
+          class="header-cta"
+          aria-label="메뉴바"
+        >
+          <img class="header-cta-img" src="../img/02.png" alt="메뉴바" />
+        </a>
+      </div>
+    </div>
+
+    <div class="mobile-nav" id="mobileNav">
+      <div class="mobile-nav-backdrop" id="mobileNavBackdrop"></div>
+      <nav class="mobile-nav-panel">
+        <div class="mobile-nav-top">
+          <strong>메뉴</strong>
+          <button class="mobile-nav-close" type="button" id="mobileNavClose">
+            ×
+          </button>
+        </div>
+        <ul class="mobile-nav-list">
+          <li><a href="../Vimeo-SubPage/SubPage.html">솔루션</a></li>
+          <li><a href="../Vimeo-plan/plan.html">플랜 소개</a></li>
+          <li><a href="../Vimeo-company/company.html">회사 소개</a></li>
+          <li><a href="../Vimeo-ApiPage/ApiPage.html">API 소개</a></li>
+          <li>
+            <a href="../Vimeo-EstimatePage/EstimatePage.html">견적 문의</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+
+            <main class="page">
+              <section class="hero">
+                <div class="hero-inner">
+                  <div class="hero-copy">
+                  <p class="hero-eyebrow" id="heroEyebrow">EXPO VIDEO PORTAL</p>
+                  <h1 class="hero-title"><img class="hero-logo" id="heroLogo" src="../img/Coex CI_Black.png" alt="COEX" /><span id="heroTitleText">전시 참가사 데모 페이지</span></h1>
+                  <p class="hero-sub" id="heroSub">전시 참가사들의 다양한 영상과 정보를 검색하고,<br />시즌 중에 필요한 정보를 빠르게 찾아보세요.</p>
+
+                  <div class="search-bar">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+                    <input id="searchInput" type="text" placeholder="검색어를 입력하세요." />
+                    <button id="searchBtn">검색</button>
+                  </div>
+
+                  <div class="popular-tags">
+                    <div class="popular-list" id="popularTags"></div>
+                  </div>
+                  </div>
+                </div>
+              </section>
+
+              <div class="content-wrap">
+              <!--
+                <aside class="filters">
+                  <div class="filters-top">
+                    <h3>필터</h3>
+                    <button id="resetFilters" class="reset-btn">↻ 초기화</button>
+                  </div>
+
+                  <div class="filter-group">
+                    <label>행사명</label>
+                    <select id="fEvent"><option value="">선택 청사</option></select>
+                  </div>
+                  <div class="filter-group">
+                    <label>참가사</label>
+                    <input id="fCompany" type="text" placeholder="참가사 검색" />
+                  </div>
+                  <div class="filter-group">
+                    <label>제품군</label>
+                    <select id="fCategory"><option value="">전체</option></select>
+                  </div>
+                  <div class="filter-group">
+                    <label>언어</label>
+                    <select id="fLang"><option value="">전체</option></select>
+                  </div>
+
+                  <div class="filter-group">
+                    <label>콘텐츠 유형</label>
+                    <div class="check-list" id="typeChecks">
+                      <label><input type="checkbox" value="" checked /> 전체</label>
+                      <label><input type="checkbox" value="제품 소개" /> 제품 소개</label>
+                      <label><input type="checkbox" value="기술 혁신" /> 기술 혁신</label>
+                      <label><input type="checkbox" value="고객사례" /> 고객사례</label>
+                      <label><input type="checkbox" value="인터뷰" /> 인터뷰</label>
+                      <label><input type="checkbox" value="하이라이트" /> 하이라이트</label>
+                    </div>
+                  </div>
+                </aside>
+              -->
+                <section class="results">
+                  <div class="results-top">
+                    <span id="resultCount">검색 결과 0개</span>
+                    <div class="results-right">
+                      <select id="sortSelect">
+                        <option value="latest">최신순</option>
+                        <option value="views">조회수 높은순</option>
+                        <option value="title">제목 가나다순</option>
+                      </select>
+                      <button class="view-btn" data-view="grid" type="button" aria-label="그리드 보기"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="1.8" y="1.8" width="5" height="5" rx="1.2"/><rect x="9.2" y="1.8" width="5" height="5" rx="1.2"/><rect x="1.8" y="9.2" width="5" height="5" rx="1.2"/><rect x="9.2" y="9.2" width="5" height="5" rx="1.2"/></svg></button>
+                      <button class="view-btn" data-view="list" type="button" aria-label="리스트 보기"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="2.4" cy="3.5" r="1.2"/><circle cx="2.4" cy="8" r="1.2"/><circle cx="2.4" cy="12.5" r="1.2"/><rect x="5.4" y="2.7" width="9" height="1.6" rx=".8"/><rect x="5.4" y="7.2" width="9" height="1.6" rx=".8"/><rect x="5.4" y="11.7" width="9" height="1.6" rx=".8"/></svg></button>
+                    </div>
+                  </div>
+                  <div class="grid" id="grid"></div>
+                  <div class="pagination" id="pagination"></div>
+                </section>
+
+                <aside class="ai-panel">
+                  <div class="ai-carousel" role="region" aria-roledescription="carousel" aria-label="사용 방법 안내">
+                    <ol class="ai-guides" id="aiGuides" tabindex="0" aria-label="사용 방법 안내 (좌우로 넘겨보세요)">
+                    <li class="ai-guide" data-guide="0" data-title="Ask AI 사용 방법" role="group" aria-roledescription="slide" aria-label="1 / 2 Ask AI 사용 방법">
+                      <h3><span class="Vimeo-color">✦</span> Vimeo Ask AI 사용 방법</h3>
+                      <p class="ai-desc">Ask AI는 현재 선택한 영상의 내용을 기반으로 질문에 답변합니다. 전시 참가사의 영상을 더 깊이 이해해보세요.</p>
+                      <ol class="ai-list">
+                        <li><span class="ai-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></span><span class="ai-badge">1</span><div><strong>영상 상세 페이지로 이동</strong><p>관심 있는 영상을 클릭하여 상세 페이지로 갑니다.</p></div></li>
+                        <li><span class="ai-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c.6 5.6 4.4 9.4 10 10-5.6.6-9.4 4.4-10 10-.6-5.6-4.4-9.4-10-10 5.6-.6 9.4-4.4 10-10z"/></svg></span><span class="ai-badge">2</span><div><strong>Ask AI 버튼 클릭</strong><p>영상 플레이어 안에 있는 반짝이는 아이콘을 클릭합니다.</p></div></li>
+                        <li><span class="ai-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><circle cx="8" cy="10.5" r="1.3" fill="#fff"/><circle cx="12" cy="10.5" r="1.3" fill="#fff"/><circle cx="16" cy="10.5" r="1.3" fill="#fff"/></svg></span><span class="ai-badge">3</span><div><strong>영상 내용에 대해 질문하기</strong><p>해당 영상의 내용을 기반으로 궁금한 점을 자유롭게 질문합니다.</p></div></li>
+                        <li><span class="ai-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M8 12h8M8 16h8M8 8h4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="ai-badge">4</span><div><strong>AI의 답변 확인</strong><p>영상의 자막, 음성, 시각적 내용을 종합하여 해당 영상에 기반한 답변을 제공합니다.</p></div></li>
+                      </ol>
+                      <div class="ai-note">
+                    <strong class="ai-note-title"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><rect x="11" y="10.5" width="2" height="7" rx="1" fill="#fff"/><circle cx="12" cy="7.3" r="1.3" fill="#fff"/></svg>꼭 확인해주세요!</strong>
+                    <ul>
+                      <li>Ask AI는 포털 전체를 검색하는 기능이 아닙니다.</li>
+                      <li>현재 시청 중인 개별 영상의 내용에 대해서만 답변합니다.</li>
+                      <li>다른 영상이나 다른 주제에 대한 검색은 일반 검색 기능을 이용해주세요.</li>
+                    </ul>
+                  </div>
+                    </li>
+                    <li class="ai-guide" data-guide="1" data-title="언어 및 더빙 변경 방법" role="group" aria-roledescription="slide" aria-label="2 / 2 언어 및 더빙 변경 방법">
+                      <h3><span class="Vimeo-color"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg></span> Vimeo 언어 및 더빙 변경 방법</h3>
+                      <p class="ai-desc">Vimeo 영상에서는 원하는 언어의 자막과 더빙(음성)을 선택하여 시청할 수 있습니다.</p>
+                      <ol class="ai-list">
+                        <li><span class="ai-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></span><span class="ai-badge">1</span><div><strong>영상을 재생합니다</strong><p>보고 싶은 영상을 선택하고 재생합니다.</p></div></li>
+                        <li><span class="ai-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10.5 10.2a2.2 2.2 0 1 0 0 3.6M17 10.2a2.2 2.2 0 1 0 0 3.6"/></svg></span><span class="ai-badge">2</span><div><strong>자막 또는 설정 버튼을 클릭합니다</strong><p>자막(CC) 버튼은 자막만, 설정 버튼은 자막과 더빙을 모두 바꿀 수 있습니다.</p></div></li>
+                        <li><span class="ai-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg></span><span class="ai-badge">3</span><div><strong>원하는 언어를 선택합니다</strong><p>열린 메뉴에서 원하는 언어를 선택합니다.</p></div></li>
+                        <li><span class="ai-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg></span><span class="ai-badge">4</span><div><strong>선택한 언어로 영상 시청</strong><p><span>선택한 언어의 자막 또는 더빙이 적용되어 재생됩니다.</span> <span>다른 언어로 바꾸려면 같은 방법으로 다시 선택하세요.</span></p></div></li>
+                      </ol>
+                      <div class="ai-note">
+                    <strong class="ai-note-title"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><rect x="11" y="10.5" width="2" height="7" rx="1" fill="#fff"/><circle cx="12" cy="7.3" r="1.3" fill="#fff"/></svg>꼭 확인해주세요!</strong>
+                    <ul>
+                      <li>영상마다 제공되는 자막 언어와 더빙(음성) 언어가 다를 수 있습니다.</li>
+                      <li>자막이 보이지 않는 경우 자막(CC) 버튼이 활성화되어 있는지 확인해주세요.</li>
+                      <li>더빙(음성) 변경은 설정 메뉴에서만 가능합니다.</li>
+                      <li>자막이나 더빙을 끄고 싶다면 각 메뉴에서 ‘끄기’ 또는 ‘원본 언어’를 선택해주세요.</li>
+                    </ul>
+                  </div>
+                    </li>
+                    </ol>
+                    <div class="ai-dots" id="aiDots" role="group" aria-label="안내 선택"></div>
+                  </div>
+                </aside>
+              </div>
+            </main>
+            
+              <div class="last">
+
+                <div class="footer-pc">
+                  <div>
+                    <img src="../img/02.png" alt="KOSS" />
+                  </div>
+                  <div class="last-font">
+                    <ul class="last-link">
+                      <li>
+                        <a href="https://www.ikss.kr/kor/business/microsoft.php"
+                          >Microsoft 공인교육센터</a
+                        >
+                      </li>
+                      <li>
+                        <a href="https://www.ikss.kr/kor/business/aws.php"
+                          >AWS 공인교육센터</a
+                        >
+                      </li>
+                      <li>
+                        <a href="https://www.ikss.kr/kor/business/itsolution.php"
+                          >IT SOLUTION</a
+                        >
+                      </li>
+                      <li>
+                        <a href="https://www.ikss.kr/kor/company/company.php">COMPANY</a>
+                      </li>
+                      <li><a href="https://www.ikss.kr/kor/news/notice.php">NEWS</a></li>
+                    </ul>
+                    <div class="info-wrap">
+                      <ul>
+                        <li>대표 : 정석원</li>
+                        <li>
+                          전화번호 : 02-535-1809
+                        </li>
+                        <li>
+                          주소 : 서울특별시 동작구 사당로 276 (사당동) 성보빌딩 1동 302호
+                          / 6층 (교육센터)
+                        </li>
+                      </ul>
+                      <ul>
+                        <li>이메일 : Vimeo@ikss.kr</li>
+                        <li>사업자등록번호 : 243-86-01158</li>
+                        <li>통신판매업 신고번호 : 제 2021-서울동작-0592호</li>
+                      </ul>
+                    </div>
+                    <div class="last-p">
+                      <p>Korea Software Service Co., Ltd. ALL RIGHT RESERVED.</p>
+                    </div>
+                  </div>
+                </div>
+
+
+                <div class="footer-inner">
+                  <img src="../img/02.png" alt="KOSS" />
+
+                  <div class="footer-accordion-wrap">
+                    <div class="footer-group">
+                      <button class="footer-group-btn" type="button">
+                        <span>Business</span>
+                        <span class="footer-arrow">∨</span>
+                      </button>
+                      <ul class="footer-group-list">
+                        <li>
+                          <a href="https://www.ikss.kr/kor/business/microsoft.php"
+                            >Microsoft 공인교육센터</a
+                          >
+                        </li>
+                        <li>
+                          <a href="https://www.ikss.kr/kor/business/aws.php"
+                            >AWS 공인교육센터</a
+                          >
+                        </li>
+                        <li>
+                          <a href="https://www.ikss.kr/kor/business/itsolution.php"
+                            >IT SOLUTION</a
+                          >
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="footer-group">
+                      <button class="footer-group-btn" type="button">
+                        <span>Company</span>
+                        <span class="footer-arrow">∨</span>
+                      </button>
+                      <ul class="footer-group-list">
+                        <li>
+                          <a href="https://www.ikss.kr/kor/company/company.php"
+                            >COMPANY</a
+                          >
+                        </li>
+                        <li>
+                          <a href="https://www.ikss.kr/kor/news/notice.php">NEWS</a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="footer-bottom">
+                    <p>전화 : 02-535-1809</p>
+                    <p>이메일 : Vimeo@ikss.kr</p>
+                    <p>
+                      대표 : 정석원 &nbsp;|&nbsp; 사업자등록번호 : 243-86-01158
+                      &nbsp;|&nbsp; 통신판매업 신고번호 : 제 2021-서울동작-0592호
+                    </p>
+                    <p>
+                      주소 : 서울특별시 동작구 사당로 276 (사당동) 성보빌딩 1동 302호 /
+                      6층 (교육센터)
+                    </p>
+                    <p class="footer-copy">
+                      Korea Software Service Co., Ltd. ALL RIGHT RESERVED.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="modal-backdrop" id="modalBackdrop" hidden>
+                <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+                  <button type="button" class="modal-close" id="modalCloseBtn" aria-label="닫기">×</button>
+                  <h3 id="modalTitle"></h3>
+                  <div class="player-wrap" id="playerWrap"></div>
+                  <p class="modal-desc" id="modalDesc"></p>
+                  <dl class="modal-info" id="modalInfo"></dl>
+                </div>
+              </div>
+
+              <script src="ExpoPortal.js?v=27"></script>
+              <script>
+                    // 모바일 메뉴
+                const menuBtn = document.getElementById("menuBtn");
+                const mobileNav = document.getElementById("mobileNav");
+                const mobileNavClose = document.getElementById("mobileNavClose");
+                const mobileNavBackdrop = document.getElementById("mobileNavBackdrop");
+                if (menuBtn) {
+                  menuBtn.addEventListener("click", () =>
+                    mobileNav.classList.add("show"),
+                  );
+                  mobileNavClose.addEventListener("click", () =>
+                    mobileNav.classList.remove("show"),
+                  );
+                  mobileNavBackdrop.addEventListener("click", () =>
+                    mobileNav.classList.remove("show"),
+                  );
+                }  
+              </script>
+          </body>
+          </html>

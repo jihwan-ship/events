@@ -1,0 +1,849 @@
+:root {
+  --ink: #12141c;
+  --ink-soft: #667085;
+  --ink-faint: #98a1b0;
+  --line: #e7e9ee;
+  --surface: #f7f8fb;
+  --white: #ffffff;
+  --accent: #1ab7ea;
+  --accent-ink: #0c7ba8;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-card: 0 1px 2px rgba(18,20,28,0.04), 0 12px 24px -12px rgba(18,20,28,0.10);
+  --shadow-pop: 0 20px 60px -20px rgba(18,20,28,0.35);
+  --hero-img-ratio: 16 / 9; /* 히어로 이미지 원본의 가로:세로 비율. 모바일에서 이미지를 자르지 않고 통째로 보여주는 데 사용 */
+  --hero-img: url("../img/Vimeo-hero.png"); /* 히어로 배경 이미지 경로: 이 줄만 바꾸면 됨 */
+}
+html{
+  scrollbar-width: thin;
+  scrollbar-color: #c8c8c8 transparent;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+  background: var(--white);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+a { text-decoration: none; color: inherit; }
+ul { margin: 0; padding: 0; list-style: none; }
+
+/* HERO */
+/* 이미지가 없거나 로딩 실패해도 휑하지 않도록 은은한 색 배경을 깔아둠 */
+.hero {
+  position: relative;
+  padding: 152px 0 56px;
+  background:
+    radial-gradient(60% 90% at 88% 15%, rgba(26,183,234,0.16), transparent 70%),
+    var(--white);
+  overflow: hidden;
+}
+/* 오른쪽 배경 이미지 */
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 68%;
+  background: var(--hero-img) right center / cover no-repeat; /* 좁아져서 잘릴 땐 왼쪽(흰색 페이드에 가려지는 쪽)을 잘라내고 오른쪽 부스는 살림 */
+  z-index: 0;
+}
+/* 왼쪽 글씨가 잘 읽히도록 왼→오 흰색 페이드 + 아래쪽은 본문으로 자연스럽게 이어지게 */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(90deg, #fff 0%, #fff 30%, rgba(255,255,255,0.85) 46%, rgba(255,255,255,0) 78%),
+    linear-gradient(0deg, #fff 0%, rgba(255,255,255,0) 22%);
+  pointer-events: none;
+}
+/* 모바일: 이미지를 글씨 뒤에 깔지 않고, 헤더 바로 아래 배너로 온전히 보여준 뒤 글씨는 그 아래에 배치 */
+@media (max-width: 768px) {
+  .hero { padding-top: 56px; } /* 모바일 헤더 높이 */
+  .hero::before {
+    position: relative;
+    inset: auto;
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--hero-img-ratio);
+    background-position: center;
+  }
+  .hero::after {
+    inset: auto;
+    top: 56px;
+    left: 0;
+    right: 0;
+    height: auto;
+    aspect-ratio: var(--hero-img-ratio);
+    background: linear-gradient(0deg, #fff 0%, rgba(255,255,255,0) 40%);
+  }
+  .hero .hero-inner { padding-top: 8px; }
+}
+
+/* 태블릿(769~1100px): 이미지 영역을 조금 넓히고 오른쪽 기준으로 붙여서 부스가 잘리지 않게 */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .hero::before { width: 76%; }
+  .hero::after {
+    background:
+      linear-gradient(90deg, #fff 0%, #fff 32%, rgba(255,255,255,0.8) 48%, rgba(255,255,255,0) 78%),
+      linear-gradient(0deg, #fff 0%, rgba(255,255,255,0) 22%);
+  }
+}
+.hero-inner {
+  max-width: 1360px;
+  padding: 0 28px; /* .content-wrap과 같은 좌우 여백 → 제목과 결과 목록의 왼쪽 선이 일치 */
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+.hero-copy { min-width: 0; max-width: 640px; }
+.hero-eyebrow { font-size: 12.5px; font-weight: 700; color: var(--accent-ink); margin-bottom: 10px; letter-spacing: 0.02em; }
+.hero h1 { font-size: 38px; font-weight: 800; margin: 0 0 12px; letter-spacing: -0.02em; line-height: 1.2; }
+.hero-sub { word-break: keep-all; font-size: 15px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 28px; max-width: 480px; }
+
+.search-bar {
+  display: flex;
+  max-width: 640px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  padding: 6px 6px 6px 22px;
+  align-items: center;
+}
+.search-icon { flex-shrink: 0; margin-right: 10px; color: var(--ink-faint); }
+.search-bar input { flex: 1; border: none; padding: 12px 12px 12px 0; font-size: 14.5px; outline: none; background: transparent; }
+.search-bar input::placeholder { color: var(--ink-faint); }
+.search-bar button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  border: none;
+  background: var(--ink);
+  color: #fff;
+  padding: 0 26px;
+  height: 44px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.search-bar button:hover { background: var(--accent-ink); }
+
+.popular-tags { margin-top: 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.popular-label { font-size: 13px; font-weight: 600; color: var(--ink-faint); }
+.popular-list { display: flex; gap: 8px; flex-wrap: wrap; }
+.popular-list button {
+  border: 1px solid var(--line);
+  background: var(--white);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.popular-list button:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+.popular-list button.active { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
+.popular-list button .chip-count { margin-left: 4px; font-size: 11px; font-weight: 500; opacity: 0.55; }
+.popular-list button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 영상 재생 모달 */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(10,12,20,0.6); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 1100; }
+.modal-backdrop[hidden] { display: none; }
+.modal { background: var(--white); border-radius: var(--radius-lg); max-width: 680px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative; box-shadow: var(--shadow-pop); }
+.modal-close { position: absolute; top: 16px; right: 18px; border: none; background: var(--surface); font-size: 1.3rem; line-height: 1; cursor: pointer; color: var(--ink-soft); width: 34px; height: 34px; border-radius: 999px; }
+.modal-close:hover { background: var(--line); color: var(--ink); }
+#modalTitle { font-size: 1.15rem; font-weight: 700; padding-right: 30px; margin-bottom: 16px; letter-spacing: -0.01em; }
+.player-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 16px; }
+.player-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+.modal-desc { font-size: 14.5px; color: #344054; line-height: 1.65; margin-bottom: 14px; white-space: pre-line; }
+
+.modal-info { margin: 0; border-top: 1px solid var(--line); padding-top: 14px; }
+.modal-info-row {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 13px;
+}
+.modal-info-row dt { margin: 0; color: var(--ink-faint); font-weight: 500; }
+.modal-info-row dd { margin: 0; color: var(--ink); }
+.modal-info-row dd.modal-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.modal-tags .chip { font-size: 11px; padding: 4px 10px; border-radius: 999px; background: var(--surface); color: var(--ink-soft); font-weight: 500; }
+
+/* LAYOUT */
+.content-wrap { max-width: 1360px; margin: 0 auto; padding: 8px 28px 96px; display: grid; grid-template-columns: 1fr 320px; gap: 28px; align-items: start; }
+
+.filters { background: var(--white); border-radius: var(--radius-lg); padding: 22px; border: 1px solid var(--line); position: sticky; top: 96px; }
+.filters-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.filters-top h3 { margin: 0; font-size: 16px; }
+.reset-btn { border: none; background: none; font-size: 12px; color: var(--ink-faint); cursor: pointer; }
+.filter-group { margin-bottom: 18px; }
+.filter-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.filter-group select, .filter-group input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: 13px; background: var(--white); }
+.check-list label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 400; margin-bottom: 6px; color: var(--ink-soft); }
+
+.results-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.results-top span { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
+.results-right { display: flex; gap: 8px; align-items: center; }
+.results-right select { padding: 9px 30px 9px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; background: var(--white); font-weight: 500; }
+.view-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--line); background: var(--white); border-radius: var(--radius-sm); width: 34px; height: 34px; cursor: pointer; color: var(--ink-soft); }
+.view-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.card { display: flex; flex-direction: column; background: var(--white); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--line); cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
+.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card); border-color: #dfe2e8; }
+.thumb { position: relative; aspect-ratio: 16/9; background: #12141c; overflow: hidden; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .duration { position: absolute; right: 10px; bottom: 10px; background: rgba(12,14,20,0.72); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; z-index: 1; }
+/* ===== 카드 hover 미리보기 (JS가 .thumb 안에 iframe을 붙였다 뗀다) ===== */
+.thumb .hover-preview {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  border: 0; background: #000;
+  opacity: 0; transition: opacity 0.25s ease;
+  pointer-events: none; /* 클릭은 그대로 카드(모달 열기)로 전달 */
+}
+.thumb .hover-preview.is-ready { opacity: 1; }
+
+/* 미리보기 로딩 중 스피너: 플레이어가 준비되기 전까지 "반응하고 있다"는 신호 */
+.thumb.is-loading::before {
+  content: "";
+  position: absolute; top: 50%; left: 50%;
+  width: 28px; height: 28px; margin: -14px 0 0 -14px;
+  border: 3px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.45));
+  animation: thumb-spin 0.8s linear infinite;
+  z-index: 1; pointer-events: none;
+}
+@keyframes thumb-spin { to { transform: rotate(360deg); } }
+
+.card-body { padding: 16px 16px 14px; flex: 1; }
+.card-title { font-weight: 700; font-size: 14.5px; margin-bottom: 8px; letter-spacing: -0.01em; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-title-row { display: flex; align-items: flex-start; gap: 6px; }
+.card-title-row .card-title { flex: 1; min-width: 0; }
+.card-meta { font-size: 12px; color: var(--ink-faint); margin-bottom: 9px; }
+.card-desc {
+  font-size: 13px;
+  color: #475467; /* ink-soft보다 진하게: 설명이 회색에 묻혀 안 보이던 문제 */
+  line-height: 1.55;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* 길면 2줄까지만 보이고 ... 처리 */
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 3.1em; /* 설명이 없는 카드도 2줄 높이를 확보해서 카드 높이가 들쭉날쭉해지지 않게 함 */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.card-tags { display: flex; flex-wrap: wrap; gap: 6px; min-height: 26px; } /* 태그는 전부 보여주고, 한 줄에 안 들어가면 칩 단위로 다음 줄로 내려간다 (같은 줄의 카드끼리는 그리드가 높이를 맞춤) */
+.card-tags span { font-size: 11px; color: var(--accent-ink); background: #e8f4fb; padding: 4px 10px; border-radius: 999px; font-weight: 600; white-space: nowrap; flex-shrink: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; } /* 칩이 찌그러지며 글자가 세로로 꺾이지 않게. 한 칩이 카드보다 길면 ...로 자름 */
+
+.pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 32px; }
+.pagination .page-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.pagination .page-btn:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
+.pagination .page-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; font-weight: 700; }
+.pagination .page-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* AI PANEL */
+.ai-panel { word-break: keep-all; overflow-wrap: break-word; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--line); padding: 22px; }
+.ai-panel h3 { margin: 0 0 12px; font-size: 18px; display: flex; align-items: center; gap: 8px; letter-spacing: -0.01em; }
+.ai-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.55; margin-bottom: 20px; }
+.ai-steps { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.ai-steps li { display: flex; gap: 12px; align-items: flex-start; }
+.ai-steps strong { display: block; font-size: 13.5px; margin-bottom: 3px; }
+.ai-steps p { margin: 0; font-size: 12.5px; color: var(--ink-faint); line-height: 1.45; }
+.ai-note { background: var(--surface); border-radius: var(--radius-md); padding: 16px; font-size: 12.5px; color: var(--ink-soft); }
+.ai-note strong { display: block; margin-bottom: 8px; color: var(--ink); }
+.ai-note ul { padding-left: 16px; list-style: disc; display: flex; flex-direction: column; gap: 5px; }
+
+@media (max-width: 1100px) {
+  .content-wrap { grid-template-columns: 1fr; }
+  .filters, .ai-panel { position: static; }
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 26px; }
+}
+
+.Vimeo-color{
+  color: var(--accent);
+}
+
+/* 검색 결과 없음 */
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  padding: 72px 24px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  word-break: keep-all;
+}
+.empty-title { margin: 0 0 8px; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.empty-desc { margin: 0 0 20px; font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; }
+.empty-reset {
+  border: none;
+  background: var(--ink);
+  color: #fff;
+  height: 40px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.empty-reset:hover { background: var(--accent-ink); }
+
+/* 결과 없음일 때: 빈 상자가 오른쪽 Ask AI 패널과 같은 높이까지 채워서 나란히 정돈되어 보이게 */
+.content-wrap.is-empty { align-items: stretch; }
+.content-wrap.is-empty .results { display: flex; flex-direction: column; }
+.content-wrap.is-empty .grid { flex: 1; grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.content-wrap.is-empty .empty-state { min-height: 0; }
+.content-wrap.is-empty .pagination { display: none; } /* 빈 페이지네이션의 margin-top(32px)이 남아 박스가 패널보다 짧아지던 것 방지 */
+
+/* ===== 보기 방식 전환 (그리드/리스트) ===== */
+.view-btn.active { background: var(--ink); border-color: var(--ink); color: var(--white); }
+
+.grid.list-view { grid-template-columns: 1fr; gap: 12px; }
+.grid.list-view .card { flex-direction: row; }
+.grid.list-view .thumb { width: 260px; flex-shrink: 0; align-self: flex-start; }
+.grid.list-view .card-body { min-width: 0; }
+.grid.list-view .card-desc { min-height: 0; }
+.grid.list-view .card-desc:empty { display: none; }
+@media (max-width: 640px) {
+  .grid.list-view .thumb { width: 120px; }
+}
+
+/* ===== 카드 더보기(⋮) 메뉴 ===== */
+.card-more { flex-shrink: 0; width: 28px; height: 28px; margin: -4px -6px 0 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink-soft); font-size: 18px; line-height: 1; cursor: pointer; }
+.card-more:hover { background: var(--surface); color: var(--ink); }
+.card-menu { position: fixed; z-index: 1000; min-width: 150px; padding: 6px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-pop); }
+.card-menu[hidden] { display: none; }
+.card-menu button { display: block; width: 100%; padding: 9px 12px; border: 0; border-radius: var(--radius-sm); background: transparent; text-align: left; font-size: 13px; color: var(--ink); cursor: pointer; }
+.card-menu button:hover:not(:disabled) { background: var(--surface); }
+.card-menu button:disabled { color: var(--ink-faint); cursor: not-allowed; }
+
+.toast { position: fixed; left: 50%; bottom: 32px; z-index: 1100; transform: translate(-50%, 12px); padding: 10px 18px; border-radius: 999px; background: var(--ink); color: var(--white); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ===== Ask AI 패널: 단계별 아이콘 ===== */
+.step-icon { position: relative; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--surface); color: var(--ink); display: flex; align-items: center; justify-content: center; }
+.step-num { position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; border-radius: 50%; background: #c3c9d4; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid var(--white); box-sizing: content-box; }
+.ai-steps { gap: 20px; }
+.ai-steps li { align-items: center; }
+.ai-note-title { display: flex !important; align-items: center; gap: 8px; }
+.ai-note-title svg { flex-shrink: 0; color: var(--ink); }
+
+/* ===== 검색창: 좁은 화면에서 검색 버튼이 잘리지 않게 ===== */
+.search-bar input { min-width: 0; } /* input은 기본 폭(약 200px) 아래로 안 줄어들어서 버튼을 밀어냄 */
+@media (max-width: 640px) {
+  .search-bar { padding: 5px 5px 5px 16px; }
+  .search-icon { margin-right: 8px; }
+  .search-bar input { font-size: 14px; }
+  .search-bar button { padding: 0 18px; height: 40px; }
+}
+
+/* ===== 데스크톱: 화면 넓게 쓰기 ===== */
+@media (min-width: 1101px) {
+  .hero-inner,
+  .content-wrap {
+    max-width: 1600px;
+    padding-left: clamp(28px, 4.8vw, 80px);
+    padding-right: clamp(28px, 4.8vw, 80px);
+  }
+  .content-wrap { grid-template-columns: 1fr 340px; }
+}
+
+/* ===== 키보드 포커스 표시 (Tab으로 이동할 때만 보이게) ===== */
+.card:focus { outline: none; }
+.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card-more:focus-visible, .view-btn:focus-visible, .card-menu button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ===== 건너뛰기 링크: 평소엔 숨겨두고 Tab으로 포커스가 오면 나타남 ===== */
+.skip-link { position: fixed; top: 10px; left: 10px; z-index: 4000; padding: 10px 16px; border-radius: var(--radius-sm); background: var(--ink); color: var(--white); font-size: 13px; font-weight: 600; text-decoration: none; transform: translateY(-200%); }
+.skip-link:focus { transform: translateY(0); outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ===== 로딩 스켈레톤 ===== */
+.skeleton-card { display: flex; flex-direction: column; background: var(--white); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--line); }
+.skeleton-body { padding: 16px; flex: 1; min-width: 0; }
+.skel { background: linear-gradient(90deg, #eef0f4 25%, #f7f8fb 50%, #eef0f4 75%); background-size: 200% 100%; animation: skel-shimmer 1.4s ease-in-out infinite; }
+.skel-thumb { aspect-ratio: 16/9; width: 100%; }
+.skel-line { height: 12px; border-radius: 6px; margin-bottom: 10px; }
+.skel-title { width: 70%; height: 15px; }
+.skel-meta { width: 45%; }
+.skeleton-tags { display: flex; gap: 6px; margin-top: 4px; }
+.skeleton-tags .skel { width: 52px; height: 22px; border-radius: 999px; }
+@keyframes skel-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+
+/* 리스트 보기에서도 스켈레톤이 가로 배치로 보이게 */
+.grid.list-view .skeleton-card { flex-direction: row; }
+.grid.list-view .skeleton-card .skel-thumb { width: 260px; flex-shrink: 0; align-self: flex-start; }
+@media (max-width: 640px) { .grid.list-view .skeleton-card .skel-thumb { width: 120px; } }
+
+/* ===== 결과 상단 줄: "검색 결과 N개"가 좁은 화면에서 두 줄로 꺾이지 않게 ===== */
+.results-top { flex-wrap: wrap; gap: 10px 12px; }
+#resultCount { white-space: nowrap; }
+@media (max-width: 480px) {
+  .results-right { gap: 6px; }
+  .results-right select { padding: 8px 24px 8px 10px; font-size: 12.5px; }
+}
+
+/* ===== [PATCH-1 시작] 히어로 압축 (시안 대비) =====
+   되돌리려면 이 PATCH-1 시작 ~ 끝 블록만 통째로 삭제하면 원래대로 돌아감
+   (Ask AI 패널 오버랩은 지저분해서 제외함 — 패널은 원래대로 결과 영역과 같은 줄에서 시작) */
+
+/* 히어로 압축: 태블릿/데스크톱만 (모바일은 기존 규칙 유지) */
+@media (min-width: 769px) {
+  .hero { padding: 118px 0 24px; }          /* 상단 = 고정 헤더 70px + 약 48px */
+  .content-wrap { padding-top: 0; }
+}
+/* ===== [PATCH-1 끝] ===== */
+
+/* ===== [PATCH-2 시작] CSS만 건드리는 가벼운 보정 (헤더/푸터 제외, 본문 영역만) =====
+   되돌리려면 PATCH-2 시작 ~ 끝 블록만 삭제. 항목별로 소제목 단위로 지워도 됨 */
+
+/* 1) 폰트 상속: 버튼/입력/셀렉트가 브라우저 기본 폰트로 나오던 것을 Pretendard로.
+   헤더·푸터의 버튼은 건드리지 않도록 본문(.page), 모달, 카드 메뉴로만 한정 */
+.page button, .page input, .page select,
+.modal-backdrop button,
+.card-menu button { font-family: inherit; }
+
+/* 2) 카드 밀도: 간격 14px, 모서리 12px, 열 수는 폭에 맞춰 자동 (카드 최소 폭 260px) */
+.grid { grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 14px; }
+.card, .skeleton-card { border-radius: var(--radius-md); }
+
+/* 3) 대비: 본문성 회색 글씨를 한 단계 진하게 (약 2.6:1 → 약 5:1) */
+.card-meta { color: var(--ink-soft); }
+.ai-steps p { color: var(--ink-soft); }
+.modal-info-row dt { color: var(--ink-soft); }
+
+/*    포커스 링: 흰 배경에서 잘 보이는 진한 청록으로 (약 2.3:1 → 약 4.8:1) */
+.card:focus-visible,
+.popular-list button:focus-visible,
+.card-more:focus-visible, .view-btn:focus-visible, .card-menu button:focus-visible { outline-color: var(--accent-ink); }
+
+/*    검색창은 outline:none이라 포커스가 가도 표시가 없었음 → 바깥 테두리로 표시 */
+.search-bar:focus-within {
+  border-color: var(--accent-ink);
+  box-shadow: var(--shadow-card), 0 0 0 3px rgba(26, 183, 234, 0.25);
+}
+
+/* 4) 검색창 모양: 시안처럼 둥근 사각형 + 더 넓게 (검색 버튼은 안쪽 모서리에 맞춰 8px) */
+.hero-copy { max-width: 860px; }
+.search-bar { max-width: 830px; border-radius: 14px; }
+.search-bar button { border-radius: 8px; }
+/* ===== [PATCH-2 끝] ===== */
+
+/* ===== [PATCH-3 시작] 카드 본문: 참가사 행 (시안) =====
+   ExpoPortal.js의 bylineHtml()과 짝. 되돌릴 땐 JS와 이 블록을 함께 원본으로 */
+.card-byline { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.card-byline-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.card-byline .card-meta { margin: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-company { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.avatar { flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); color: var(--ink-soft); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+/* ===== [PATCH-3 끝] ===== */
+
+/* ===== [PATCH-4 시작] 히어로 제목 앞 COEX 로고 (상사 피드백) =====
+   로고 높이는 제목 글자 크기(em)에 맞춰 같이 커지고 줄어듦. 파일 경로는 ExpoPortal.html의 .hero-logo src.
+   되돌리려면 이 블록 삭제 + HTML의 <h1>을 원래대로 */
+.hero h1.hero-title { display: flex; align-items: center; flex-wrap: wrap; gap: 0.3em 16px; }
+.hero-logo { display: block; height: 0.85em; width: auto; flex-shrink: 0; }
+.hero h1.hero-title span { word-break: keep-all; } /* 좁은 화면에서 "페이/지"처럼 단어 중간이 끊기지 않게 */
+/* ===== [PATCH-4 끝] ===== */
+
+/* ===== [PATCH-5 시작] Ask AI 사용 방법: 한 단계씩 옆으로 넘기는 캐러셀 (상사 피드백) =====
+   ExpoPortal.js의 "Ask AI 안내 캐러셀"과 짝. 되돌리려면 JS 블록 + 이 블록 삭제 + HTML의 .ai-carousel을 원래 <ol>로 */
+/* 그리드 칸(1fr)은 안쪽 내용의 최소 폭보다 작아지지 못한다 → 가로로 넘기는 트랙이 있으면 좁은 화면에서 패널이 화면 밖으로 밀려남.
+   min-width:0으로 "줄어들어도 된다"고 알려준다 */
+.ai-panel, .ai-carousel, .ai-viewport { min-width: 0; }
+.ai-carousel { margin-bottom: 20px; }
+.ai-viewport { position: relative; padding: 0 40px; }
+
+.ai-steps {
+  display: flex; flex-direction: row; gap: 0; margin: 0;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;            /* Firefox */
+  border-radius: var(--radius-md);
+}
+.ai-steps::-webkit-scrollbar { display: none; }
+@media (hover: hover) and (pointer: fine) { .ai-steps { cursor: grab; user-select: none; } }
+.ai-steps.dragging { scroll-snap-type: none; cursor: grabbing; }
+.ai-steps:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+
+.ai-steps li {
+  flex: 0 0 100%; min-width: 0;
+  scroll-snap-align: start; scroll-snap-stop: always;
+  flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 14px; padding: 6px 4px 4px; text-align: center;
+}
+.ai-steps li > div { max-width: 300px; }
+.ai-steps li .step-icon { width: 60px; height: 60px; }
+.ai-steps li .step-icon svg { width: 26px; height: 26px; }
+.ai-steps li .step-num { width: 22px; height: 22px; font-size: 12px; top: -4px; right: -4px; background: var(--accent-ink); }
+.ai-steps li strong { font-size: 15px; margin-bottom: 6px; }
+.ai-steps li p { font-size: 13px; line-height: 1.55; }
+
+.ai-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--white); color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; padding: 0; transition: border-color 0.15s, opacity 0.15s;
+}
+.ai-nav:hover:not(:disabled) { border-color: var(--ink); }
+.ai-nav:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.ai-nav:disabled { opacity: 0.3; cursor: default; }
+.ai-prev { left: 0; }
+.ai-next { right: 0; }
+
+.ai-dots { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; }
+.ai-dots button {
+  width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px;
+  background: #c3c9d4; cursor: pointer;
+  transition: width 0.25s ease, background 0.25s ease;
+}
+.ai-dots button.active { width: 22px; background: var(--accent); }
+.ai-dots button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+
+/* 좁은 화면: 양옆 버튼 자리(40px씩)를 없애 글이 들어갈 폭을 확보하고, 버튼은 아이콘 높이에 겹쳐 둔다 */
+@media (max-width: 520px) {
+  .ai-viewport { padding: 0; }
+  .ai-nav { top: 36px; width: 28px; height: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .ai-dots button { transition: none; } }
+/* ===== [PATCH-5 끝] ===== */
+
+/* ===== [PATCH-6 시작] 모바일: 인기 태그 칩을 한 줄 가로 스와이프로 (여러 줄로 쌓여 지저분하던 것 정리) =====
+   데스크톱/태블릿(641px~)은 기존처럼 줄바꿈. 칩은 하나도 숨기지 않고 옆으로 밀면 전부 보인다.
+   되돌리려면 이 블록만 삭제 */
+@media (max-width: 640px) {
+  .popular-tags { display: block; }
+  .popular-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -28px;          /* 화면 끝까지 밀리도록 좌우 여백을 상쇄 → 오른쪽에 칩이 잘려 보여 "더 있다"는 게 자연스럽게 드러남 */
+    padding: 4px 28px;        /* 포커스 링이 잘리지 않게 위아래도 살짝 */
+    scroll-padding: 0 28px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .popular-list::-webkit-scrollbar { display: none; }
+  .popular-list button { flex-shrink: 0; white-space: nowrap; }
+}
+/* ===== [PATCH-6 끝] ===== */
+
+/* ===== [PATCH-7 시작] 480px 이하: 인기 태그 칩을 딱 3개만 보여주고 나머지는 옆으로 스와이프 =====
+   PATCH-6의 음수 마진(화면 끝까지 밀기)을 끄면 컨테이너가 콘텐츠 폭에서 잘려서 4번째 칩이 삐죽 나오지 않는다.
+   칩 폭 = (컨테이너 폭 - 간격 8px x 2) / 3. 스냅으로 항상 칩 경계에 맞춰 멈춘다.
+   되돌리려면 이 블록만 삭제 */
+@media (max-width: 480px) {
+  .popular-list {
+    margin: 0;
+    padding: 4px 0;
+    scroll-padding: 0;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+  }
+  .popular-list button {
+    flex: 0 0 calc((100% - 16px) / 3);
+    padding: 7px 8px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    scroll-snap-align: start;
+  }
+  .popular-list button:focus-visible { outline-offset: -2px; } /* 컨테이너 밖으로 나가 잘리지 않게 안쪽으로 */
+}
+/* ===== [PATCH-7 끝] ===== */
+
+/* ===== [PATCH-8] 검색 API 응답을 기다리는 동안 목록을 흐리게 ===== */
+.grid { transition: opacity 0.15s ease; }
+.grid.is-searching { opacity: 0.45; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .grid { transition: none; } }
+/* ===== [PATCH-8 끝] ===== */
+
+/* ===== [PATCH-10 시작] 안내 패널: 시안 형태(단계 4개를 리스트로) + 안내 2종을 좌우 스와이프로 전환 =====
+   ExpoPortal.js의 "안내 캐러셀"과 짝. 스와이프 단위는 "안내 한 장"(제목+설명+4단계+확인 박스). 되돌리려면 이 블록 + JS 블록 + HTML 되돌리기 */
+.ai-carousel { margin-bottom: 0; }
+.ai-guides {
+  display: flex; flex-direction: row; gap: 0; margin: 0; padding: 0; list-style: none;
+  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scrollbar-width: none;
+}
+.ai-guides::-webkit-scrollbar { display: none; }
+@media (hover: hover) and (pointer: fine) { .ai-guides { cursor: grab; user-select: none; } }
+.ai-guides.dragging { scroll-snap-type: none; cursor: grabbing; }
+.ai-guides:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; border-radius: var(--radius-md); }
+
+.ai-guide {
+  flex: 0 0 100%; min-width: 0; display: flex; flex-direction: column;
+  scroll-snap-align: start; scroll-snap-stop: always;
+}
+.ai-guide h3 { margin: 0 0 12px; font-size: 20px; }
+.ai-guide .ai-desc { margin-bottom: 22px; }
+.ai-list { list-style: none; margin: 0 0 24px; padding: 0; display: flex; flex-direction: column; gap: 20px; flex: 1; justify-content: space-between; } /* 안내마다 높이가 달라도 남는 칸은 단계 사이에 고르게 */
+.ai-list li { display: flex; align-items: center; gap: 12px; }
+.ai-ico {
+  flex-shrink: 0; width: 46px; height: 46px; border-radius: 50%;
+  background: var(--surface); color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+}
+.ai-ico svg { width: 20px; height: 20px; }
+.ai-badge {
+  flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+  background: #90949b; color: #fff; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.ai-list li > div { min-width: 0; }
+.ai-list strong { display: block; font-size: 14px; margin-bottom: 3px; }
+.ai-list p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.ai-guide .ai-note { margin-top: auto; } /* 두 안내의 높이가 달라도 확인 박스는 항상 아래에 붙는다 */
+
+.ai-guide h3 .Vimeo-color { display: inline-flex; align-items: center; }
+.ai-dots { margin-top: 18px; }
+
+/* 한 줄 레이아웃(1100px 이하): 안내 한 장의 높이만큼만 차지한다. 트랙 높이는 JS가 현재 안내에 맞춘다
+   (안 그러면 더 긴 쪽 높이에 맞춰져 짧은 안내 아래가 휑해진다) */
+@media (max-width: 1100px) {
+  .ai-guides { align-items: flex-start; transition: height 0.2s ease; }
+  .ai-list { flex: none; }
+}
+/* 좁은 화면: 패널 안쪽 여백과 아이콘/번호 크기를 줄여 글자 칸을 넓힌다 */
+@media (max-width: 480px) {
+  .ai-panel { padding: 18px 16px; }
+  .ai-guide h3 { font-size: 17px; margin-bottom: 10px; }
+  .ai-guide .ai-desc { font-size: 12.5px; margin-bottom: 16px; }
+  .ai-list { gap: 14px; margin-bottom: 18px; }
+  .ai-list li { gap: 8px; }
+  .ai-ico { width: 36px; height: 36px; }
+  .ai-ico svg { width: 16px; height: 16px; }
+  .ai-badge { width: 22px; height: 22px; font-size: 11px; }
+  .ai-list strong { font-size: 13px; }
+  .ai-list p { font-size: 12px; }
+  .ai-guide .ai-note { padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .ai-guides { transition: none; } }
+/* ===== [PATCH-10 끝] ===== */
+
+/* ===== [PATCH-11 시작] 안내 패널 가독성 개선 =====
+   1) 아이콘·번호·제목을 같은 가로 중심선에 정렬  2) 글씨 크기·대비 상향  3) 4번 문장 <br> → CSS 줄바꿈
+   ExpoPortal.html의 4번 항목 <br>이 <span> 두 개로 바뀐 것과 짝. 되돌리려면 이 블록 삭제 + HTML 원복 */
+
+/* 1) 정렬: 위쪽 기준으로 놓고, 제목 줄(20px) 중심을 아이콘(46px) 중심에 맞춤 */
+.ai-list li { align-items: flex-start; }
+.ai-list li > div { padding-top: 13px; }          /* (46 - 20) / 2 */
+.ai-list strong { line-height: 20px; margin-bottom: 3px; }
+.ai-badge { margin-top: 10px; }                   /* 번호(26px) 중심 = 제목 줄 중심 */
+
+/* 2) 글씨 크기·대비 */
+.ai-guide .ai-desc { font-size: 13.5px; color: #475467; line-height: 1.6; }
+.ai-list strong    { font-size: 14.5px; }
+.ai-list p         { font-size: 13px; line-height: 1.55; color: #262d36; }
+.ai-note           { font-size: 13px; color: #1e1f22; }
+.ai-note li        { line-height: 1.55; }
+.ai-note-title     { font-size: 13.5px; }
+.ai-badge          { background: var(--accent-ink); } /* 흰 숫자 대비 확보 */
+
+/* 3) 문장 단위 줄바꿈 (<br> 대체) */
+.ai-list p span { display: block; }
+.ai-list p span + span { margin-top: 4px; }
+
+/* 좁은 화면 (기존 480px 규칙을 덮어씀) */
+@media (max-width: 480px) {
+  .ai-list li > div { padding-top: 8px; }         /* (36 - 20) / 2 */
+  .ai-badge { margin-top: 7px; }                  /* 번호(22px) 중심 = 제목 줄 중심 */
+  .ai-list strong { font-size: 13.5px; }
+  .ai-list p { font-size: 12.5px; }
+  .ai-guide .ai-desc { font-size: 13px; }
+  .ai-note { font-size: 12.5px; }
+}
+/* ===== [PATCH-11 끝] ===== */
+
+/* ===== [PATCH-12 시작] 가독성 보정: 연한 회색 글씨 진하게 + iOS 입력창 자동 확대 방지 =====
+   되돌리려면 이 PATCH-12 시작 ~ 끝 블록만 삭제 */
+
+/* 1) 연한 회색(--ink-faint): 흰 배경 대비 2.6:1 → 약 4.8:1
+   인기 태그 라벨, 검색창 placeholder, 초기화 버튼 등이 한 번에 진해짐 */
+:root { --ink-faint: #6b7280; }
+
+/* 인기 태그 칩 안의 개수 숫자: opacity .55(약 2:1) → .8 */
+.popular-list button .chip-count { opacity: 0.8; }
+
+/* 2) iOS Safari는 16px 미만 입력창에 포커스하면 화면을 확대함 → 터치 기기에서는 16px 이상으로
+   (가로 모드처럼 640px보다 넓은 폰도 잡으려고 pointer: coarse도 같이 사용) */
+@media (max-width: 640px), (pointer: coarse) {
+  .search-bar input { font-size: 16px; }
+  .results-right select { font-size: 16px; }   /* 정렬 select도 같은 이유로 */
+}
+/* ===== [PATCH-12 끝] ===== */
+
+/* ===== [PATCH-13 시작] 모바일 카드 정리: 제목 2줄, 태그 1줄, 재생시간 배지 축소 =====
+   되돌리려면 이 PATCH-13 시작 ~ 끝 블록만 삭제.
+   태그를 전부 보이게 하고 싶으면 아래 .card-tags 규칙만 지우면 됨 */
+@media (max-width: 640px) {
+  /* 제목: 한 줄 말줄임 → 2줄까지 */
+  .card-title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  /* 태그: 한 줄까지만 보이게 (넘치는 칩은 숨김 → 카드가 짧아짐) */
+  .card-tags { max-height: 26px; overflow: hidden; }
+  /* 리스트 보기 썸네일(120px) 위 재생시간 배지 축소 */
+  .grid.list-view .thumb .duration {
+    font-size: 10px;
+    padding: 2px 6px;
+    right: 6px;
+    bottom: 6px;
+  }
+}
+/* ===== [PATCH-13 끝] ===== */
+
+/* ===== [PATCH-14 시작] 모바일 리스트 보기: 카드 높이 줄이고 썸네일 키우기 =====
+   되돌리려면 이 PATCH-14 시작 ~ 끝 블록만 삭제.
+   설명을 다시 보이게 하려면 .card-desc 규칙만 지우면 됨 */
+@media (max-width: 640px) {
+  /* 썸네일: 120px → 140px, 카드 높이만큼 세로로 꽉 채움 (아래 흰 공간 제거, 좌우는 살짝 잘림) */
+  .grid.list-view .thumb {
+    width: 140px;
+    align-self: stretch;
+    aspect-ratio: auto;
+    min-height: 84px;
+  }
+  .grid.list-view .thumb img { position: absolute; inset: 0; }
+  .grid.list-view .skeleton-card .skel-thumb {
+    width: 140px;
+    align-self: stretch;
+    aspect-ratio: auto;
+    min-height: 84px;
+  }
+
+  /* 높이 절약: 설명 숨김 + 안쪽 여백/간격 축소 */
+  .grid.list-view .card-desc { display: none; }
+  .grid.list-view .card-body { padding: 12px 12px 10px; }
+  .grid.list-view .card-title { margin-bottom: 4px; }
+  .grid.list-view .card-byline { margin-bottom: 8px; }
+}
+/* ===== [PATCH-14 끝] ===== */
+
+/* ===== [PATCH-15 시작] 모바일 리스트 보기 절충안: 설명 1줄 + 태그 2개 + "+N" 표시 =====
+   ExpoPortal.js의 cardTagsHtml()이 .tag-extra / .tag-more 클래스를 붙여주는 것과 짝 (JS 수정 필요).
+   JS를 안 고치면 .tag-more가 없어서 태그만 2줄 전후로 보이니 JS와 함께 적용할 것.
+   되돌리려면 이 블록 삭제 + JS 원복 */
+
+/* "+N" 칩은 기본적으로 숨김 (PC/그리드에서는 태그가 다 보이므로 필요 없음) */
+.card-tags .tag-more { display: none; }
+
+@media (max-width: 640px) {
+  /* 제목: 단어 단위로 줄바꿈 ("설명 / 회"처럼 한 글자만 떨어지는 것 방지) */
+  .card-title { word-break: keep-all; }
+
+  /* PATCH-14에서 숨겼던 설명을 1줄만 다시 보여줌 */
+  .grid.list-view .card-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    min-height: 0;
+    margin-bottom: 8px;
+    word-break: normal; /* keep-all이면 긴 단어가 다음 줄로 넘어가 1줄이 "2026년…"만 남음 */
+  }
+
+  /* 태그: 앞 2개만 + 나머지 개수 */
+  .grid.list-view .card-tags .tag-extra { display: none; }
+  .grid.list-view .card-tags .tag-more {
+    display: inline-block;
+    padding: 4px 8px;
+    background: var(--surface);
+    color: var(--ink-soft);
+  }
+}
+/* ===== [PATCH-15 끝] ===== */
+
+/* ===== [PATCH-16 시작] 좁은 폰에서 "+N" 칩이 잘리던 문제 수정 =====
+   원인: 칩이 한 줄에 다 안 들어가면 "+N"이 2번째 줄로 밀리고, PATCH-13의 max-height(26px)에 잘려 안 보였음.
+   해결: 한 줄 고정(nowrap) + 태그 칩이 줄어들 수 있게(말줄임) 해서 "+N"이 항상 보이게 함.
+   되돌리려면 이 블록만 삭제 */
+@media (max-width: 640px) {
+  .grid.list-view .card-tags { flex-wrap: nowrap; }
+  .grid.list-view .card-tags span { flex-shrink: 1; min-width: 0; padding: 4px 8px; }
+  .grid.list-view .card-tags .tag-more { flex-shrink: 0; }
+}
+/* ===== [PATCH-16 끝] ===== */
+
+/* ===== [PATCH-17 시작] 좁은 폰(425px 이하): 태그 1개 + "+N", 320px대는 썸네일 축소 =====
+   PATCH-16의 "태그를 줄여서 말줄임"은 '#...'만 남아 못 쓰겠어서, 좁을 땐 아예 1개만 보여주는 방식으로 교체.
+   ExpoPortal.js의 cardTagsHtml()이 .tag-second / .tag-more-narrow 클래스를 만들어주는 것과 짝 (JS 수정 필요).
+   되돌리려면 이 블록 삭제 + JS 원복 */
+
+.card-tags .tag-more-narrow { display: none; }
+
+@media (max-width: 425px) {
+  /* 2번째 태그와 "+(N-2)"는 숨기고, 첫 태그 + "+(N-1)"만 보여줌 */
+  .grid.list-view .card-tags .tag-second { display: none; }
+  .grid.list-view .card-tags .tag-more { display: none; }
+  .grid.list-view .card-tags .tag-more-narrow {
+    display: inline-block;
+    flex-shrink: 0;
+    padding: 4px 8px;
+    background: var(--surface);
+    color: var(--ink-soft);
+  }
+}
+
+/* 320~360px대: 썸네일이 텍스트 칸을 너무 잡아먹지 않게 축소 + 여백 줄임 */
+@media (max-width: 360px) {
+  .grid.list-view .thumb,
+  .grid.list-view .skeleton-card .skel-thumb { width: 112px; }
+  .grid.list-view .card-body { padding: 10px 10px 8px; }
+  .grid.list-view .card-byline .card-meta { font-size: 11.5px; }
+}
+/* ===== [PATCH-17 끝] ===== */
+
+/* ===== [PATCH-18 시작] 모바일 그리드 보기: 안 들어가는 태그는 숨기고 "+N" 표시 =====
+   ExpoPortal.js의 fitCardTags()가 .tag-fit-hidden / .tag-more-fit / .fit-tight 클래스를 붙여주는 것과 짝 (JS 수정 필요).
+   PATCH-13의 max-height(26px)에 태그가 조용히 잘리던 문제를 해결한다.
+   되돌리려면 이 블록 삭제 + JS의 fitCardTags 관련 코드 삭제 */
+.card-tags .tag-fit-hidden { display: none; }
+.card-tags .tag-more-fit {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+/* 태그 1개만 보여줘도 "+N" 자리가 없을 만큼 긴 경우: 태그를 말줄임으로 줄여서 자리 확보 */
+.card-tags.fit-tight span:not(.tag-more-fit) { max-width: calc(100% - 44px); }
+/* ===== [PATCH-18 끝] ===== */
