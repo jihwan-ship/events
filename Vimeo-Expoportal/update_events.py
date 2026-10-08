@@ -10,7 +10,7 @@ COEX 일정 엑셀(Coex_Schedule_*.xls) -> events/index.json 갱신 + 새 행사
 
 규칙
     - 행사명 + 시작일이 같으면 같은 행사로 보고, id / ready 는 기존 값을 유지한다.
-    - name / category / end / venue 는 엑셀 값으로 갱신한다.
+    - name / category / field / end / venue 는 엑셀 값으로 갱신한다. (field = 엑셀의 '행사분야', 목록 필터에 쓰인다)
     - 기본: 엑셀에 없는 기존 행사는 지우지 않는다. (다운로드 날짜 범위 밖일 수 있음)
     - --replace: 엑셀에 없는 기존 행사를 index.json 에서 제거하고, 해당 행사id.json 도 삭제한다.
     - 새 행사: id 를 event-YYYYMMDD-번호 로 만들고, ready=true, 행사id.json 을 _template.json 으로 생성한다.
@@ -32,7 +32,7 @@ import pandas as pd
 EVENTS_DIR = "events"
 INDEX_PATH = os.path.join(EVENTS_DIR, "index.json")
 TEMPLATE_PATH = os.path.join(EVENTS_DIR, "_template.json")
-KEYS = ["id", "name", "category", "start", "end", "venue", "ready"]
+KEYS = ["id", "name", "category", "field", "start", "end", "venue", "ready"]
 
 
 def clean(v):
@@ -64,6 +64,7 @@ def read_schedule(path):
         rows.append({
             "name": name,
             "category": clean(r.get("행사분류")) or "Exhibition",
+            "field": clean(r.get("행사분야")),
             "start": start,
             "end": to_iso(r.get("행사 종료일자")) or start,
             "venue": clean(r.get("행사 장소")),
@@ -117,7 +118,7 @@ def remove_event_config(ev, dry):
 
 
 def dump_index(events):
-    lines = [json.dumps({k: e[k] for k in KEYS}, ensure_ascii=False) for e in events]
+    lines = [json.dumps({k: e.get(k, "") for k in KEYS}, ensure_ascii=False) for e in events]
     return "[\n  " + ",\n  ".join(lines) + "\n]\n"
 
 
@@ -147,7 +148,7 @@ def main():
     for s in sched:
         cur = by_key.get((s["name"], s["start"]))
         if cur:
-            diff = {k: (cur.get(k), s[k]) for k in ("category", "end", "venue") if cur.get(k) != s[k]}
+            diff = {k: (cur.get(k), s[k]) for k in ("category", "field", "end", "venue") if cur.get(k) != s[k]}
             if diff:
                 cur.update({k: v[1] for k, v in diff.items()})
                 changed.append((cur["name"], diff))
