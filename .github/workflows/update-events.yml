@@ -1,7 +1,7 @@
 name: Update events
 
 on:
-  # schedule 폴더에 엑셀을 올리면 자동 실행
+  # 저장소 맨 위 schedule 폴더에 엑셀을 올리면 자동 실행
   push:
     paths:
       - "schedule/*.xls"
@@ -23,12 +23,17 @@ jobs:
 
       - run: pip install pandas xlrd
 
-      - run: python update_events.py
+      - name: Update events
+        working-directory: Vimeo-Expoportal
+        run: |
+          XLS=$(ls ../schedule/Coex_Schedule_*.xls | sort | tail -1)
+          echo "사용할 엑셀: $XLS"
+          python update_events.py "$XLS"
 
       - name: Commit changes
         run: |
-          rm -f events/index.json.bak
+          rm -f Vimeo-Expoportal/events/index.json.bak
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add events
+          git add Vimeo-Expoportal/events
           git diff --cached --quiet || (git commit -m "행사 목록 자동 갱신" && git push)
