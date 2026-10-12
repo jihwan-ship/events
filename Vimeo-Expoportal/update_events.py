@@ -10,11 +10,13 @@ COEX 일정 엑셀(Coex_Schedule_*.xls) -> events/index.json 갱신 + 새 행사
 
 규칙
     - 행사명 + 시작일이 같으면 같은 행사로 보고, id / ready 는 기존 값을 유지한다.
-    - name / category / field / end / venue 는 엑셀 값으로 갱신한다. (field = 엑셀의 '행사분야', 목록 필터에 쓰인다)
+    - name / category / field / end / venue / organizer 는 엑셀 값으로 갱신한다. (field = 엑셀의 '행사분야', 목록 필터에 쓰인다)
     - 기본: 엑셀에 없는 기존 행사는 지우지 않는다. (다운로드 날짜 범위 밖일 수 있음)
     - --replace: 엑셀에 없는 기존 행사를 index.json 에서 제거하고, 해당 행사id.json 도 삭제한다.
     - 새 행사: id 를 event-YYYYMMDD-번호 로 만들고, ready=true, 행사id.json 을 _template.json 으로 생성한다.
     - 새 행사의 videosUrl 은 비워둔다 -> 기본(전체) 영상 목록이 사용된다.
+    - 행사 소개문(subtitle)은 '기간 / 장소 / 주최' 세 줄이다. 이미 만들어진 설정은 소개문이 자동 생성된 그대로일 때만
+      '주최' 줄을 덧붙이고, 직접 고친 소개문은 건드리지 않는다.
 
 필요 패키지: pip install pandas xlrd
 """
@@ -32,7 +34,7 @@ import pandas as pd
 EVENTS_DIR = "events"
 INDEX_PATH = os.path.join(EVENTS_DIR, "index.json")
 TEMPLATE_PATH = os.path.join(EVENTS_DIR, "_template.json")
-KEYS = ["id", "name", "category", "field", "start", "end", "venue", "ready"]
+KEYS = ["id", "name", "category", "field", "start", "end", "venue", "organizer", "ready"]
 
 
 def clean(v):
@@ -68,6 +70,7 @@ def read_schedule(path):
             "start": start,
             "end": to_iso(r.get("행사 종료일자")) or start,
             "venue": clean(r.get("행사 장소")),
+            "organizer": clean(r.get("주최")),
         })
     return rows
 
@@ -87,18 +90,44 @@ def next_number(events):
     return max(nums, default=0) + 1
 
 
+def build_subtitle(ev, with_organizer=True):
+    """행사 소개문: 기간 / 장소 / 주최 (빈 줄은 뺀다)"""
+    period = ev["start"].replace("-", ".")
+    if ev["end"] != ev["start"]:
+        period += " - " + ev["end"].replace("-", ".")
+    lines = [period, ev.get("venue", "")]
+    if with_organizer and ev.get("organizer"):
+        lines.append("주최: " + ev["organizer"])
+    return "\n".join(l for l in lines if l)
+
+
+def refresh_event_subtitle(ev, dry):
+    """이미 만들어진 설정의 소개문에 '주최' 줄을 덧붙인다. 바꿨으면 True.
+    소개문이 '기간 / 장소'만 있는 자동 생성 상태일 때만 바꾸고, 직접 고친 소개문은 그대로 둔다."""
+    path = os.path.join(EVENTS_DIR, f"{ev['id']}.json")
+    if not os.path.exists(path) or not ev.get("organizer"):
+        return False
+    with open(path, encoding="utf-8") as f:
+        cfg = json.load(f)
+    if cfg.get("subtitle") != build_subtitle(ev, with_organizer=False):
+        return False
+    cfg["subtitle"] = build_subtitle(ev)
+    if not dry:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+    return True
+
+
 def write_event_config(ev, dry):
     path = os.path.join(EVENTS_DIR, f"{ev['id']}.json")
     if os.path.exists(path):
         return False
     with open(TEMPLATE_PATH, encoding="utf-8") as f:
         cfg = json.load(f)
-    period = ev["start"].replace("-", ".")
-    if ev["end"] != ev["start"]:
-        period += " - " + ev["end"].replace("-", ".")
     cfg["pageTitle"] = f"{ev['name']} | 영상 포털"
     cfg["title"] = ev["name"]
-    cfg["subtitle"] = f"{period}\n{ev['venue']}".strip()
+    cfg["subtitle"] = build_subtitle(ev)
     cfg["videosUrl"] = ""  # 비우면 기본(전체) 영상 목록
     if not dry:
         with open(path, "w", encoding="utf-8") as f:
@@ -143,12 +172,13 @@ def main():
         events = json.load(f)
     by_key = {(e["name"], e["start"]): e for e in events}
 
-    added, changed = [], []
+    added, changed, matched = [], [], []
     num = next_number(events)
     for s in sched:
         cur = by_key.get((s["name"], s["start"]))
         if cur:
-            diff = {k: (cur.get(k), s[k]) for k in ("category", "field", "end", "venue") if cur.get(k) != s[k]}
+            matched.append(cur)
+            diff = {k: (cur.get(k), s[k]) for k in ("category", "field", "end", "venue", "organizer") if cur.get(k) != s[k]}
             if diff:
                 cur.update({k: v[1] for k, v in diff.items()})
                 changed.append((cur["name"], diff))
@@ -170,10 +200,12 @@ def main():
 
     created = [e["id"] for e in (events if a.fill_missing else added) if write_event_config(e, a.dry_run)]
     deleted = [e["id"] for e in removed if remove_event_config(e, a.dry_run)]
+    refreshed = [e["id"] for e in matched if refresh_event_subtitle(e, a.dry_run)]
 
     print(f"\n엑셀 {len(sched)}개 / 기존 {len(events) - len(added) + len(removed)}개 -> 최종 {len(events)}개")
     print(f"새 행사 {len(added)}개, 값이 바뀐 행사 {len(changed)}개, 새로 만든 설정 파일 {len(created)}개", end="")
     print(f", 제거된 행사 {len(removed)}개, 삭제한 설정 파일 {len(deleted)}개" if a.replace else "")
+    print(f"소개문에 주최 줄을 추가한 설정 파일 {len(refreshed)}개")
     for e in removed:
         print(f"  - {e['id']}  {e['start']}  {e['name']}")
     for e in added:
@@ -182,6 +214,8 @@ def main():
         print(f"  ~ {name}: {diff}")
     for i in created:
         print(f"  * events/{i}.json")
+    for i in refreshed:
+        print(f"  ~ events/{i}.json (소개문에 주최 추가)")
     for i in deleted:
         print(f"  x events/{i}.json (삭제)")
 
