@@ -5,7 +5,7 @@ COEX 일정 엑셀(Coex_Schedule_*.xls) -> events/index.json 갱신 + 새 행사
     python update_events.py                       # schedule/ 또는 현재 폴더의 가장 최근 Coex_Schedule_*.xls 사용
     python update_events.py 받은파일.xls           # 파일 직접 지정
     python update_events.py --dry-run             # 파일은 건드리지 않고 변경 내용만 미리보기
-    python update_events.py --fill-missing        # 기존 행사 중 행사id.json 이 없는 것도 새로 만들기
+    python update_events.py --fill-missing        # ready 가 아닌 행사까지 포함해서, 행사id.json 이 없는 것을 모두 새로 만들기
     python update_events.py --replace             # 엑셀에 없는 기존 행사를 목록과 설정 파일에서 제거 (엑셀 기준으로 맞춤)
 
 규칙
@@ -17,6 +17,7 @@ COEX 일정 엑셀(Coex_Schedule_*.xls) -> events/index.json 갱신 + 새 행사
     - 새 행사의 videosUrl 은 비워둔다 -> 기본(전체) 영상 목록이 사용된다.
     - 행사 소개문(subtitle)은 '기간 / 장소 / 주최' 세 줄이다. 이미 만들어진 설정은 소개문이 자동 생성된 그대로일 때만
       '주최' 줄을 덧붙이고, 직접 고친 소개문은 건드리지 않는다.
+    - 목록에 있는 행사(ready=true)의 행사id.json 이 없으면 실행할 때마다 자동으로 새로 만든다. (이미 있는 파일은 덮어쓰지 않는다)
 
 필요 패키지: pip install pandas xlrd
 """
@@ -198,7 +199,9 @@ def main():
 
     events.sort(key=lambda e: e["start"])  # 같은 날짜끼리는 기존 순서 유지
 
-    created = [e["id"] for e in (events if a.fill_missing else added) if write_event_config(e, a.dry_run)]
+    # 클릭되는(ready) 행사인데 설정 파일이 없으면 "준비 중" 화면이 뜨므로, 없는 것은 항상 만들어 둔다.
+    targets = events if a.fill_missing else [e for e in events if e.get("ready", True)]
+    created = [e["id"] for e in targets if write_event_config(e, a.dry_run)]
     deleted = [e["id"] for e in removed if remove_event_config(e, a.dry_run)]
     refreshed = [e["id"] for e in matched if refresh_event_subtitle(e, a.dry_run)]
 
