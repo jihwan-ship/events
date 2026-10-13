@@ -1,0 +1,12 @@
+{
+  "pageTitle": "COEX 전시 참가사 데모 페이지",
+  "eyebrow": "EXPO VIDEO PORTAL",
+  "logo": "../img/Coex CI_Black.png",
+  "logoAlt": "COEX",
+  "title": "전시 참가사 데모 페이지",
+  "subtitle": "전시 참가사들의 다양한 영상과 정보를 검색하고,\n시즌 중에 필요한 정보를 빠르게 찾아보세요.",
+  "searchPlaceholder": "검색어를 입력하세요.",
+  "heroImage": "",
+  "videosUrl": "https://raw.githubusercontent.com/jihwan-ship/vimeo-repo/main/videos.json",
+  "popularTerms": ["AI", "글로벌", "사업"]
+}
