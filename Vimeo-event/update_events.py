@@ -1,24 +1,32 @@
 """
-COEX 일정 엑셀(Coex_Schedule_*.xls) -> events/index.json 갱신 + 새 행사 설정 파일 생성
+COEX 일정 엑셀(Coex_Schedule_*.xls) -> events/index.json 갱신
 
 사용법 (ExpoPortal.html 이 있는 폴더에서 실행)
     python update_events.py                       # schedule/ 또는 현재 폴더의 가장 최근 Coex_Schedule_*.xls 사용
     python update_events.py 받은파일.xls           # 파일 직접 지정
     python update_events.py --dry-run             # 파일은 건드리지 않고 변경 내용만 미리보기
-    python update_events.py --fill-missing        # 기존 행사 중 행사id.json 이 없는 것도 새로 만들기
-    python update_events.py --replace             # 엑셀에 없는 기존 행사를 목록과 설정 파일에서 제거 (엑셀 기준으로 맞춤)
+    python update_events.py --replace             # 엑셀에 없는 기존 행사를 목록에서 제거 (영상 연결이 있는 행사는 유지)
+    python update_events.py --create-config       # 새 행사의 행사id.json 도 만들기 (예전 동작)
+    python update_events.py --fill-missing        # 기존 행사 중 행사id.json 이 없는 것도 만들기 (--create-config 포함)
 
 규칙
-    - 행사명 + 시작일이 같으면 같은 행사로 보고, id / ready 는 기존 값을 유지한다.
-    - name / category / field / end / venue 는 엑셀 값으로 갱신한다. (field = 엑셀의 '행사분야', 목록 필터에 쓰인다)
-    - 기본: 엑셀에 없는 기존 행사는 지우지 않는다. (다운로드 날짜 범위 밖일 수 있음)
-    - --replace: 엑셀에 없는 기존 행사를 index.json 에서 제거하고, 해당 행사id.json 도 삭제한다.
-    - 새 행사: id 를 event-YYYYMMDD-번호 로 만들고, ready=true, 행사id.json 을 _template.json 으로 생성한다.
-    - 새 행사의 videosUrl 은 비워둔다 -> 기본(전체) 영상 목록이 사용된다.
+    1) 같은 행사 찾기 (id / ready 는 항상 기존 값을 유지한다)
+         ① 행사명 + 시작일이 같다
+         ② 행사명이 같고 날짜만 바뀌었다
+         ③ 이름이 바뀌었지만 시작일·종료일·장소가 같다
+         ④ 이름이 바뀌었지만 시작일과 관련 사이트가 같다
+       ②~④ 에서 후보가 여러 개면 관련 사이트 > 주최 > 이름 유사도 순으로 좁히고,
+       그래도 확실하지 않으면 추측하지 않고 새 행사로 취급한다.
+    2) 영상 연결(행사id.json 의 videoIds / videosUrl)이 있는 행사는 어떤 경우에도 지우지 않는다.
+       --replace 로 엑셀에 없는 행사를 정리할 때도 목록과 설정 파일을 그대로 둔다.
+    3) 새 행사에는 기본적으로 행사id.json 을 만들지 않는다. (event.js 는 index.json 만으로도 행사 페이지를 연다)
+       영상을 연결할 행사만 events/행사id.json 을 직접 만들면 된다.
+    4) index.json 에는 매칭용으로 site(관련 사이트), host(주최) 가 함께 저장된다. 화면에는 쓰이지 않는다.
 
 필요 패키지: pip install pandas xlrd
 """
 import argparse
+import difflib
 import glob
 import html
 import json
@@ -32,7 +40,12 @@ import pandas as pd
 EVENTS_DIR = "events"
 INDEX_PATH = os.path.join(EVENTS_DIR, "index.json")
 TEMPLATE_PATH = os.path.join(EVENTS_DIR, "_template.json")
-KEYS = ["id", "name", "category", "field", "start", "end", "venue", "ready"]
+KEYS = ["id", "name", "category", "field", "start", "end", "venue", "ready", "site", "host"]
+UPDATE_KEYS = ("name", "start", "category", "field", "end", "venue", "site", "host")
+# event.js 가 "영상 없음"으로 보는 전체 영상 목록 주소
+DEFAULT_VIDEOS_URL = "https://raw.githubusercontent.com/jihwan-ship/vimeo-repo/main/videos.json"
+MIN_SIM = 0.5   # 이름 유사도가 이 값 이상이면 같은 행사일 근거로 본다
+MARGIN = 0.15   # 1등 후보가 2등보다 이만큼 앞서야 확실하다고 본다
 
 
 def clean(v):
@@ -49,18 +62,30 @@ def to_iso(s):
     return f"{m[1]}-{int(m[2]):02d}-{int(m[3]):02d}" if m else ""
 
 
+def norm_site(v):
+    """https://www.kipa.org/siif/ -> kipa.org/siif"""
+    s = re.sub(r"\s+", "", clean(v)).lower()
+    s = re.sub(r"^https?://", "", s)
+    s = re.sub(r"^www\.", "", s)
+    return s.rstrip("/")
+
+
 def read_schedule(path):
-    try:
-        # COEX 의 xls 는 살짝 손상된 형태라 이 옵션이 필요하다.
-        df = pd.read_excel(path, engine_kwargs={"ignore_workbook_corruption": True})
-    except Exception:
-        # 확장자만 xls 이고 실제로는 HTML 표인 경우 대비
-        df = pd.read_html(path)[0]
-    rows = []
+    if path.lower().endswith(".csv"):
+        df = pd.read_csv(path)
+    else:
+        try:
+            # COEX 의 xls 는 살짝 손상된 형태라 이 옵션이 필요하다.
+            df = pd.read_excel(path, engine_kwargs={"ignore_workbook_corruption": True})
+        except Exception:
+            # 확장자만 xls 이고 실제로는 HTML 표인 경우 대비
+            df = pd.read_html(path)[0]
+    rows, seen = [], set()
     for _, r in df.iterrows():
         name, start = clean(r.get("행사명")), to_iso(r.get("행사 시작일자"))
-        if not name or not start:
+        if not name or not start or (name, start) in seen:
             continue
+        seen.add((name, start))
         rows.append({
             "name": name,
             "category": clean(r.get("행사분류")) or "Exhibition",
@@ -68,6 +93,8 @@ def read_schedule(path):
             "start": start,
             "end": to_iso(r.get("행사 종료일자")) or start,
             "venue": clean(r.get("행사 장소")),
+            "site": norm_site(r.get("관련 사이트")),
+            "host": clean(r.get("주최")),
         })
     return rows
 
@@ -83,12 +110,39 @@ def find_xls(arg):
 
 
 def next_number(events):
+    """id 번호는 index.json 과 events 폴더의 기존 파일 이름을 모두 보고, 겹치지 않게 다음 번호를 쓴다."""
     nums = [int(m[1]) for e in events if (m := re.match(r"^event-\d{8}-(\d+)$", e["id"]))]
+    for p in glob.glob(os.path.join(EVENTS_DIR, "event-*.json")):
+        m = re.match(r"^event-\d{8}-(\d+)\.json$", os.path.basename(p))
+        if m:
+            nums.append(int(m[1]))
     return max(nums, default=0) + 1
 
 
+# ── 영상 연결 보호 ──
+def config_path(eid):
+    return os.path.join(EVENTS_DIR, f"{eid}.json")
+
+
+def config_has_videos(eid):
+    """행사id.json 에 영상 연결(videoIds / videosUrl)이 있으면 True. 읽을 수 없는 파일은 안전하게 True 로 본다."""
+    path = config_path(eid)
+    if not os.path.exists(path):
+        return False
+    try:
+        with open(path, encoding="utf-8") as f:
+            cfg = json.load(f)
+    except Exception:
+        return True
+    ids = cfg.get("videoIds")
+    if isinstance(ids, list) and any(str(x).strip() for x in ids):
+        return True
+    url = cfg.get("videosUrl")
+    return isinstance(url, str) and url.strip() not in ("", DEFAULT_VIDEOS_URL)
+
+
 def write_event_config(ev, dry):
-    path = os.path.join(EVENTS_DIR, f"{ev['id']}.json")
+    path = config_path(ev["id"])
     if os.path.exists(path):
         return False
     with open(TEMPLATE_PATH, encoding="utf-8") as f:
@@ -108,13 +162,37 @@ def write_event_config(ev, dry):
 
 
 def remove_event_config(ev, dry):
-    """제거된 행사의 설정 파일(행사id.json)을 삭제한다. 삭제했으면 True."""
-    path = os.path.join(EVENTS_DIR, f"{ev['id']}.json")
-    if not os.path.exists(path):
+    """영상 연결이 없는 설정 파일만 삭제한다. 삭제했으면 True."""
+    path = config_path(ev["id"])
+    if not os.path.exists(path) or config_has_videos(ev["id"]):
         return False
     if not dry:
         os.remove(path)
     return True
+
+
+# ── 같은 행사 찾기 ──
+def name_sim(a, b):
+    na = re.sub(r"[\W\d_]+", "", a.lower())
+    nb = re.sub(r"[\W\d_]+", "", b.lower())
+    return difflib.SequenceMatcher(None, na, nb).ratio() if na and nb else 0.0
+
+
+def score(old, s):
+    """(관련 사이트 일치, 주최 일치, 이름 유사도) - 튜플 비교라 앞 항목이 우선한다."""
+    site = bool(s["site"]) and old.get("site", "") == s["site"]
+    host = bool(s["host"]) and old.get("host", "") == s["host"]
+    return (site, host, round(name_sim(old["name"], s["name"]), 3))
+
+
+def confident(sc):
+    """같은 행사라고 볼 만한 근거가 하나라도 있는가 (같은 방·같은 날의 전혀 다른 행사를 잇지 않기 위함)"""
+    return sc[0] or sc[1] or sc[2] >= MIN_SIM
+
+
+def decisive(best, second):
+    """1등이 2등보다 확실히 앞서는가"""
+    return best[:2] != second[:2] or best[2] - second[2] >= MARGIN
 
 
 def dump_index(events):
@@ -127,8 +205,9 @@ def main():
     ap.add_argument("xls", nargs="?")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--fill-missing", action="store_true")
+    ap.add_argument("--create-config", action="store_true", help="새 행사의 행사id.json 도 만든다")
     ap.add_argument("--replace", action="store_true",
-                    help="엑셀에 없는 기존 행사를 목록과 설정 파일에서 제거 (엑셀 기준으로 맞춤)")
+                    help="엑셀에 없는 기존 행사를 목록에서 제거 (영상 연결이 있는 행사는 유지)")
     a = ap.parse_args()
 
     xls = find_xls(a.xls)
@@ -141,39 +220,99 @@ def main():
 
     with open(INDEX_PATH, encoding="utf-8") as f:
         events = json.load(f)
-    by_key = {(e["name"], e["start"]): e for e in events}
-
-    added, changed = [], []
+    old_count = len(events)
     num = next_number(events)
-    for s in sched:
-        cur = by_key.get((s["name"], s["start"]))
-        if cur:
-            diff = {k: (cur.get(k), s[k]) for k in ("category", "field", "end", "venue") if cur.get(k) != s[k]}
-            if diff:
-                cur.update({k: v[1] for k, v in diff.items()})
-                changed.append((cur["name"], diff))
-        else:
-            ev = {"id": f"event-{s['start'].replace('-', '')}-{num:02d}", **s, "ready": True}
-            num += 1
-            events.append(ev)
-            by_key[(ev["name"], ev["start"])] = ev
-            added.append(ev)
 
-    # --replace: 엑셀에 없는 기존 행사 제거
-    removed = []
+    matched = {}   # 기존 행사 id -> sched 인덱스
+    used = set()   # 짝이 정해진 sched 인덱스
+    relinked = []  # (변경 전 기존 행사, 엑셀 행, 방식)
+
+    # ① 행사명 + 시작일이 같다
+    by_key = {(e["name"], e["start"]): e for e in events}
+    for i, s in enumerate(sched):
+        cur = by_key.get((s["name"], s["start"]))
+        if cur is not None and cur["id"] not in matched:
+            matched[cur["id"]] = i
+            used.add(i)
+
+    def link_pass(label, related):
+        """남은 기존 행사와 남은 엑셀 행 중 related 인 쌍을 찾는다.
+        서로가 서로의 1등이고, 둘 다 2등보다 확실히 앞설 때만 같은 행사로 확정한다."""
+        olds = [e for e in events if e["id"] not in matched]
+        news = [i for i in range(len(sched)) if i not in used]
+        by_new, by_old = {}, {}
+        for i in news:
+            for o in olds:
+                if related(o, sched[i]):
+                    sc = score(o, sched[i])
+                    if confident(sc):
+                        by_new.setdefault(i, []).append((sc, o["id"]))
+                        by_old.setdefault(o["id"], []).append((sc, i))
+
+        def top(lst):
+            lst = sorted(lst, key=lambda t: t[0], reverse=True)
+            return lst[0][1], (len(lst) == 1 or decisive(lst[0][0], lst[1][0]))
+
+        id2ev = {e["id"]: e for e in events}
+        for i, lst in by_new.items():
+            oid, ok1 = top(lst)
+            j, ok2 = top(by_old[oid])
+            if ok1 and ok2 and j == i and oid not in matched and i not in used:
+                relinked.append((dict(id2ev[oid]), sched[i], label))
+                matched[oid] = i
+                used.add(i)
+
+    same_slot = lambda o, s: (o["start"], o["end"], o["venue"]) == (s["start"], s["end"], s["venue"])
+    link_pass("같은 이름, 일정 변경", lambda o, s: o["name"] == s["name"])                             # ②
+    link_pass("이름 변경", same_slot)                                                                 # ③
+    link_pass("관련 사이트 일치", lambda o, s: o["start"] == s["start"] and bool(s["site"]) and o.get("site", "") == s["site"])  # ④
+
+    # 짝이 정해진 행사는 엑셀 값으로 갱신 (id / ready 는 유지)
+    id2ev = {e["id"]: e for e in events}
+    relinked_ids = {o["id"] for o, _, _ in relinked}
+    changed = []
+    for oid, i in matched.items():
+        cur, s = id2ev[oid], sched[i]
+        diff = {k: (cur.get(k), s[k]) for k in ("category", "field", "end", "venue") if cur.get(k) != s[k]}
+        if diff and oid not in relinked_ids:
+            changed.append((cur["name"], diff))
+        cur.update({k: s[k] for k in UPDATE_KEYS})
+
+    # 짝이 없는 엑셀 행은 새 행사
+    added = []
+    for i, s in enumerate(sched):
+        if i in used:
+            continue
+        ev = {"id": f"event-{s['start'].replace('-', '')}-{num:02d}", **s, "ready": True}
+        num += 1
+        events.append(ev)
+        added.append(ev)
+
+    # --replace: 엑셀에 없는 기존 행사 정리 (영상 연결이 있으면 유지)
+    removed, kept = [], []
     if a.replace:
-        sched_keys = {(s["name"], s["start"]) for s in sched}
-        removed = [e for e in events if (e["name"], e["start"]) not in sched_keys]
-        events = [e for e in events if (e["name"], e["start"]) in sched_keys]
+        new_ids = {e["id"] for e in added}
+        for e in events:
+            if e["id"] in matched or e["id"] in new_ids:
+                continue
+            (kept if config_has_videos(e["id"]) else removed).append(e)
+        gone = {e["id"] for e in removed}
+        events = [e for e in events if e["id"] not in gone]
 
     events.sort(key=lambda e: e["start"])  # 같은 날짜끼리는 기존 순서 유지
 
-    created = [e["id"] for e in (events if a.fill_missing else added) if write_event_config(e, a.dry_run)]
+    create = a.create_config or a.fill_missing
+    targets = events if a.fill_missing else (added if a.create_config else [])
+    created = [e["id"] for e in targets if create and write_event_config(e, a.dry_run)]
     deleted = [e["id"] for e in removed if remove_event_config(e, a.dry_run)]
 
-    print(f"\n엑셀 {len(sched)}개 / 기존 {len(events) - len(added) + len(removed)}개 -> 최종 {len(events)}개")
-    print(f"새 행사 {len(added)}개, 값이 바뀐 행사 {len(changed)}개, 새로 만든 설정 파일 {len(created)}개", end="")
-    print(f", 제거된 행사 {len(removed)}개, 삭제한 설정 파일 {len(deleted)}개" if a.replace else "")
+    print(f"\n엑셀 {len(sched)}개 / 기존 {old_count}개 -> 최종 {len(events)}개")
+    print(f"새 행사 {len(added)}개, 이름·일정이 바뀌어 이어진 행사 {len(relinked)}개, "
+          f"값이 바뀐 행사 {len(changed)}개, 새로 만든 설정 파일 {len(created)}개", end="")
+    print(f", 제거된 행사 {len(removed)}개, 삭제한 설정 파일 {len(deleted)}개, 영상 연결로 유지한 행사 {len(kept)}개"
+          if a.replace else "")
+    for old, s, how in relinked:
+        print(f"  ≈ [{how}] {old['name']}  ->  {s['name']}  (id 유지: {old['id']})")
     for e in removed:
         print(f"  - {e['id']}  {e['start']}  {e['name']}")
     for e in added:
@@ -184,6 +323,14 @@ def main():
         print(f"  * events/{i}.json")
     for i in deleted:
         print(f"  x events/{i}.json (삭제)")
+    for e in kept:
+        near = [n for n in added if n["start"] == e["start"] and n["venue"] == e["venue"]]
+        if near:
+            names = ", ".join(n["name"] for n in near)
+            print(f"  ⚠ 영상 연결이 있는 '{e['name']}'({e['id']})가 엑셀에서 이어지지 않았습니다. "
+                  f"같은 날짜·장소의 새 행사: {names} -> 같은 행사라면 videosUrl 을 새 id 의 설정 파일로 옮겨주세요.")
+        else:
+            print(f"  ! 영상 연결이 있어 유지: {e['id']}  {e['start']}  {e['name']} (엑셀에 없음)")
 
     if a.dry_run:
         print("\n(--dry-run: 파일은 바꾸지 않았습니다)")
