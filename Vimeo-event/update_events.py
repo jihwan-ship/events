@@ -50,6 +50,7 @@ import pandas as pd
 
 EVENTS_DIR = "events"
 INDEX_PATH = os.path.join(EVENTS_DIR, "index.json")
+META_PATH = os.path.join(EVENTS_DIR, "meta.json")  # 사이트에 "언제 기준 일정인지" 보여주는 용도 (엑셀 다운로드 날짜, 일정 범위)
 TEMPLATE_PATH = os.path.join(EVENTS_DIR, "_template.json")
 KEYS = ["id", "name", "category", "field", "start", "end", "venue", "ready", "site", "host"]
 UPDATE_KEYS = ("name", "start", "category", "field", "end", "venue", "site", "host")
@@ -469,7 +470,25 @@ def main():
     shutil.copyfile(INDEX_PATH, INDEX_PATH + ".bak")
     with open(INDEX_PATH, "w", encoding="utf-8") as f:
         f.write(dump_index(events))
+    meta = build_meta(xls, sched)
+    with open(META_PATH, "w", encoding="utf-8") as f:
+        json.dump(meta, f, ensure_ascii=False, indent=2)
+        f.write("\n")
     print(f"\n저장 완료: {INDEX_PATH} (이전 버전은 {INDEX_PATH}.bak)")
+    print(f"기준 정보: {META_PATH} (엑셀 다운로드 {meta['updatedAt']}, 일정 {meta['rangeStart']} ~ {meta['rangeEnd']})")
+
+
+def build_meta(xls, sched):
+    """엑셀 파일 이름의 다운로드 시각(Coex_Schedule_20261020101448.xls)과 엑셀에 담긴 일정 범위.
+    파일 이름에서 날짜를 못 읽으면 오늘 날짜를 쓴다."""
+    m = re.search(r"(\d{4})(\d{2})(\d{2})\d{6}", os.path.basename(xls))
+    updated = f"{m[1]}-{m[2]}-{m[3]}" if m else datetime.date.today().isoformat()
+    return {
+        "updatedAt": updated,
+        "rangeStart": min(s["start"] for s in sched),
+        "rangeEnd": max(s["end"] for s in sched),
+        "source": "COEX",
+    }
 
 
 if __name__ == "__main__":
