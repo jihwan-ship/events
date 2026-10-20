@@ -32,6 +32,5 @@
   {"id": "event-20261107-71", "name": "대한미용성형레이저의학회 미용의료기기 박람회 및 추계 학술대회 2026", "category": "Exhibition", "field": "의료/건강/스포츠", "start": "2026-11-07", "end": "2026-11-08", "venue": "Hall D", "ready": true, "site": "asls.kr", "host": "대한미용성형레이저의학회"},
   {"id": "event-20261111-79", "name": "제25회 서울카페쇼", "category": "Exhibition", "field": "농수산/식음료", "start": "2026-11-11", "end": "2026-11-14", "venue": "전관", "ready": true, "site": "kor.cafeshow.com/kor", "host": "엑스포럼, 월간커피"},
   {"id": "event-20261111-80", "name": "제15회 월드커피포럼 2026", "category": "Convention", "field": "농수산/식음료", "start": "2026-11-11", "end": "2026-11-14", "venue": "컨퍼런스룸(남) 3F, 컨퍼런스룸(남) 4F", "ready": true, "site": "wclforum.org/kr", "host": "월드커피포럼 조직위원회(World Coffee Forum Organizing Committee)"},
-  {"id": "event-20261112-81", "name": "AI 콘텐츠 페스티벌 2026", "category": "Convention", "field": "농수산/식음료", "start": "2026-11-12", "end": "2026-11-14", "venue": "The Platz", "ready": true, "site": "fo.o2meet.io/aicofe/99148/index.do", "host": "문화체육관광부"},
-  {"id": "event-20261224-121", "name": "업라이징 페스타 Vol.2", "category": "Exhibition", "field": "예술/디자인", "start": "2026-12-24", "end": "2026-12-27", "venue": "The Platz", "ready": true, "site": "uprisingfesta.com", "host": "(주)아스트룸"}
+  {"id": "event-20261112-81", "name": "AI 콘텐츠 페스티벌 2026", "category": "Convention", "field": "농수산/식음료", "start": "2026-11-12", "end": "2026-11-14", "venue": "The Platz", "ready": true, "site": "fo.o2meet.io/aicofe/99148/index.do", "host": "문화체육관광부"}
 ]
