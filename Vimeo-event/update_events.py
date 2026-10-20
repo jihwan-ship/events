@@ -17,8 +17,12 @@ COEX 일정 엑셀(Coex_Schedule_*.xls) -> events/index.json 갱신
          ④ 이름이 바뀌었지만 시작일과 관련 사이트가 같다
        ②~④ 에서 후보가 여러 개면 관련 사이트 > 주최 > 이름 유사도 순으로 좁히고,
        그래도 확실하지 않으면 추측하지 않고 새 행사로 취급한다.
-    2) 영상 연결(행사id.json 의 videoIds / videosUrl)이 있는 행사는 어떤 경우에도 지우지 않는다.
-       --replace 로 엑셀에 없는 행사를 정리할 때도 목록과 설정 파일을 그대로 둔다.
+    2) 영상 연결(행사id.json 의 videoIds / videosUrl)이 있는 행사는 엑셀에서 빠져도 지우지 않는다.
+       단, 행사가 끝난 지 --expire-days(기본 30)일이 지나면 영상 연결이 있어도 목록과 설정 파일을 함께 지운다.
+       (0 으로 주면 이 만료 정리를 끈다. 아직 끝나지 않은 행사는 계속 보호한다.)
+       --drop-all-missing 을 함께 주면 이 보호를 모두 끄고, 엑셀에 없는 행사는 영상 연결이 있어도 예외 없이 지운다.
+       이때 삭제된 영상 연결(videoIds / videosUrl)은 실행 로그에 그대로 남는다.
+       --replace 일 때는 목록에 없는데 파일만 남은 event-*.json(영상 연결 없는 것)도 함께 정리한다.
     3) 새 행사에는 기본적으로 행사id.json 을 만들지 않는다. (event.js 는 index.json 만으로도 행사 페이지를 연다)
        영상을 연결할 행사만 events/행사id.json 을 직접 만들면 된다.
     4) index.json 에는 매칭용으로 site(관련 사이트), host(주최) 가 함께 저장된다. 화면에는 쓰이지 않는다.
@@ -26,6 +30,7 @@ COEX 일정 엑셀(Coex_Schedule_*.xls) -> events/index.json 갱신
 필요 패키지: pip install pandas xlrd
 """
 import argparse
+import datetime
 import difflib
 import glob
 import html
@@ -42,8 +47,12 @@ INDEX_PATH = os.path.join(EVENTS_DIR, "index.json")
 TEMPLATE_PATH = os.path.join(EVENTS_DIR, "_template.json")
 KEYS = ["id", "name", "category", "field", "start", "end", "venue", "ready", "site", "host"]
 UPDATE_KEYS = ("name", "start", "category", "field", "end", "venue", "site", "host")
-# event.js 가 "영상 없음"으로 보는 전체 영상 목록 주소
-DEFAULT_VIDEOS_URL = "https://raw.githubusercontent.com/jihwan-ship/vimeo-repo/main/videos.json"
+# event.js 가 "영상 없음"으로 보는 전체 영상 목록 주소 (예전 GitHub 주소 + 지금 쓰는 Worker 주소)
+DEFAULT_VIDEOS_URLS = (
+    "https://raw.githubusercontent.com/jihwan-ship/vimeo-repo/main/videos.json",
+    "https://events-proxy.helloaing2407.workers.dev/videos.json",
+)
+EXPIRE_DAYS = 30  # 영상 연결이 있는 행사도 엑셀에 없고 종료 후 이만큼 지나면 정리 (0 이면 사용 안 함)
 MIN_SIM = 0.5   # 이름 유사도가 이 값 이상이면 같은 행사일 근거로 본다
 MARGIN = 0.15   # 1등 후보가 2등보다 이만큼 앞서야 확실하다고 본다
 
@@ -138,7 +147,17 @@ def config_has_videos(eid):
     if isinstance(ids, list) and any(str(x).strip() for x in ids):
         return True
     url = cfg.get("videosUrl")
-    return isinstance(url, str) and url.strip() not in ("", DEFAULT_VIDEOS_URL)
+    return isinstance(url, str) and url.strip() not in ("",) + DEFAULT_VIDEOS_URLS
+
+
+def read_videos(eid):
+    """삭제하기 전에 로그로 남길 영상 연결 정보(videoIds / videosUrl)."""
+    try:
+        with open(config_path(eid), encoding="utf-8") as f:
+            cfg = json.load(f)
+    except Exception:
+        return "(읽을 수 없음)"
+    return json.dumps({k: cfg[k] for k in ("videoIds", "videosUrl") if cfg.get(k)}, ensure_ascii=False)
 
 
 def write_event_config(ev, dry):
@@ -161,10 +180,10 @@ def write_event_config(ev, dry):
     return True
 
 
-def remove_event_config(ev, dry):
-    """영상 연결이 없는 설정 파일만 삭제한다. 삭제했으면 True."""
+def remove_event_config(ev, dry, force=False):
+    """영상 연결이 없는 설정 파일만 삭제한다(force=True 면 영상 연결이 있어도 삭제). 삭제했으면 True."""
     path = config_path(ev["id"])
-    if not os.path.exists(path) or config_has_videos(ev["id"]):
+    if not os.path.exists(path) or (config_has_videos(ev["id"]) and not force):
         return False
     if not dry:
         os.remove(path)
@@ -207,7 +226,11 @@ def main():
     ap.add_argument("--fill-missing", action="store_true")
     ap.add_argument("--create-config", action="store_true", help="새 행사의 행사id.json 도 만든다")
     ap.add_argument("--replace", action="store_true",
-                    help="엑셀에 없는 기존 행사를 목록에서 제거 (영상 연결이 있는 행사는 유지)")
+                    help="엑셀에 없는 기존 행사를 목록에서 제거 (영상 연결이 있는 행사는 종료 후 --expire-days 일까지 유지)")
+    ap.add_argument("--drop-all-missing", action="store_true",
+                    help="--replace 일 때, 엑셀에 없는 행사는 영상 연결이 있어도 예외 없이 삭제 (삭제된 영상 연결은 로그에 남김)")
+    ap.add_argument("--expire-days", type=int, default=EXPIRE_DAYS,
+                    help="--replace 일 때, 영상 연결이 있는 행사도 종료 후 이 일수가 지나면 정리 (0 이면 끔)")
     a = ap.parse_args()
 
     xls = find_xls(a.xls)
@@ -289,13 +312,30 @@ def main():
         added.append(ev)
 
     # --replace: 엑셀에 없는 기존 행사 정리 (영상 연결이 있으면 유지)
-    removed, kept = [], []
+    removed, kept, forced_ids = [], [], set()
     if a.replace:
+        today = datetime.date.today()
+
+        def expired(e):
+            """행사가 끝난 지 --expire-days 일이 지났는가 (날짜를 못 읽으면 보호 유지)"""
+            if a.expire_days <= 0:
+                return False
+            try:
+                end = datetime.date.fromisoformat(e.get("end") or e["start"])
+            except ValueError:
+                return False
+            return (today - end).days > a.expire_days
+
         new_ids = {e["id"] for e in added}
         for e in events:
             if e["id"] in matched or e["id"] in new_ids:
                 continue
-            (kept if config_has_videos(e["id"]) else removed).append(e)
+            if config_has_videos(e["id"]) and not (a.drop_all_missing or expired(e)):
+                kept.append(e)
+            else:
+                removed.append(e)
+                if config_has_videos(e["id"]):
+                    forced_ids.add(e["id"])
         gone = {e["id"] for e in removed}
         events = [e for e in events if e["id"] not in gone]
 
@@ -304,12 +344,31 @@ def main():
     create = a.create_config or a.fill_missing
     targets = events if a.fill_missing else (added if a.create_config else [])
     created = [e["id"] for e in targets if create and write_event_config(e, a.dry_run)]
-    deleted = [e["id"] for e in removed if remove_event_config(e, a.dry_run)]
+    lost_videos = {e["id"]: read_videos(e["id"]) for e in removed if e["id"] in forced_ids}  # 지우기 전에 기록
+    deleted = [e["id"] for e in removed if remove_event_config(e, a.dry_run, force=e["id"] in forced_ids)]
+
+    # --replace: 목록(index.json)에 없는데 파일만 남은 event-*.json 정리 (영상 연결이 있으면 유지)
+    orphans, orphans_kept = [], []
+    if a.replace:
+        final_ids = {e["id"] for e in events}
+        for p in sorted(glob.glob(os.path.join(EVENTS_DIR, "event-*.json"))):
+            eid = os.path.basename(p)[:-5]
+            if eid in final_ids or eid in deleted:
+                continue
+            if config_has_videos(eid):
+                if not a.drop_all_missing:
+                    orphans_kept.append(eid)
+                    continue
+                lost_videos[eid] = read_videos(eid)  # 지우기 전에 기록
+            orphans.append(eid)
+            if not a.dry_run:
+                os.remove(p)
 
     print(f"\n엑셀 {len(sched)}개 / 기존 {old_count}개 -> 최종 {len(events)}개")
     print(f"새 행사 {len(added)}개, 이름·일정이 바뀌어 이어진 행사 {len(relinked)}개, "
           f"값이 바뀐 행사 {len(changed)}개, 새로 만든 설정 파일 {len(created)}개", end="")
-    print(f", 제거된 행사 {len(removed)}개, 삭제한 설정 파일 {len(deleted)}개, 영상 연결로 유지한 행사 {len(kept)}개"
+    print(f", 제거된 행사 {len(removed)}개, 삭제한 설정 파일 {len(deleted)}개, 영상 연결로 유지한 행사 {len(kept)}개, "
+          f"목록에 없던 설정 파일 정리 {len(orphans)}개"
           if a.replace else "")
     for old, s, how in relinked:
         print(f"  ≈ [{how}] {old['name']}  ->  {s['name']}  (id 유지: {old['id']})")
@@ -322,7 +381,15 @@ def main():
     for i in created:
         print(f"  * events/{i}.json")
     for i in deleted:
-        print(f"  x events/{i}.json (삭제)")
+        why = "엑셀에 없어 영상 연결째 삭제" if a.drop_all_missing else "종료 후 기간 만료로 영상 연결째 정리"
+        tag = f"삭제, {why}" if i in forced_ids else "삭제"
+        extra = f"  이전 영상 연결: {lost_videos[i]}" if i in lost_videos else ""
+        print(f"  x events/{i}.json ({tag}){extra}")
+    for i in orphans:
+        extra = f"  이전 영상 연결: {lost_videos[i]}" if i in lost_videos else ""
+        print(f"  x events/{i}.json (삭제, 목록에 없던 파일){extra}")
+    for i in orphans_kept:
+        print(f"  ! events/{i}.json 은 목록에 없지만 영상 연결이 있어 유지")
     for e in kept:
         near = [n for n in added if n["start"] == e["start"] and n["venue"] == e["venue"]]
         if near:
@@ -331,6 +398,15 @@ def main():
                   f"같은 날짜·장소의 새 행사: {names} -> 같은 행사라면 videosUrl 을 새 id 의 설정 파일로 옮겨주세요.")
         else:
             print(f"  ! 영상 연결이 있어 유지: {e['id']}  {e['start']}  {e['name']} (엑셀에 없음)")
+
+    for e in removed:
+        if e["id"] not in forced_ids:
+            continue
+        near = [n for n in added if n["start"] == e["start"] and n["venue"] == e["venue"]]
+        if near:
+            names = ", ".join(f"{n['name']}({n['id']})" for n in near)
+            print(f"  ⚠ 영상 연결이 있던 '{e['name']}'({e['id']})를 삭제했습니다. 같은 날짜·장소의 새 행사: {names} -> "
+                  f"같은 행사라면 새 id 의 설정 파일에 videoIds 를 옮겨주세요. 이전 영상 연결: {lost_videos.get(e['id'])}")
 
     if a.dry_run:
         print("\n(--dry-run: 파일은 바꾸지 않았습니다)")
