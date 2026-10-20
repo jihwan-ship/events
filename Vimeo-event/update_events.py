@@ -26,6 +26,12 @@ COEX 일정 엑셀(Coex_Schedule_*.xls) -> events/index.json 갱신
     3) 새 행사에는 기본적으로 행사id.json 을 만들지 않는다. (event.js 는 index.json 만으로도 행사 페이지를 연다)
        영상을 연결할 행사만 events/행사id.json 을 직접 만들면 된다.
     4) index.json 에는 매칭용으로 site(관련 사이트), host(주최) 가 함께 저장된다. 화면에는 쓰이지 않는다.
+    5) [안전장치] --replace 일 때 "잘못 받은 엑셀"로 보이면 아무것도 바꾸지 않고 중단한다 (실패로 끝나서 Actions 가 알림을 보낸다).
+         - 엑셀의 마지막 행사일보다 뒤에 있는 미래 행사가 OUTSIDE_LIMIT 개 이상 지워질 때 (다운로드 기간을 좁게 받은 경우)
+         - 아직 끝나지 않은 행사가 기존의 BULK_RATIO 이상 한꺼번에 지워질 때 (분류/분야 필터를 건 채 받은 경우)
+         - 아직 끝나지 않은 행사 중 영상 연결이 있는 행사가 지워질 때
+       정말 의도한 것이면 --force 로 실행한다 (Actions 탭 > Run workflow > force 체크).
+       --dry-run 에서는 중단하지 않고 경고만 보여준다.
 
 필요 패키지: pip install pandas xlrd
 """
@@ -55,6 +61,9 @@ DEFAULT_VIDEOS_URLS = (
 EXPIRE_DAYS = 30  # 영상 연결이 있는 행사도 엑셀에 없고 종료 후 이만큼 지나면 정리 (0 이면 사용 안 함)
 MIN_SIM = 0.5   # 이름 유사도가 이 값 이상이면 같은 행사일 근거로 본다
 MARGIN = 0.15   # 1등 후보가 2등보다 이만큼 앞서야 확실하다고 본다
+OUTSIDE_LIMIT = 3  # [안전장치] 엑셀 기간 밖의 미래 행사가 이 개수 이상 지워지면 중단
+BULK_RATIO = 0.5   # [안전장치] 아직 안 끝난 행사가 기존의 이 비율 이상 지워지면 중단
+BULK_MIN = 5       # [안전장치] 단, 지워지는 개수가 이보다 적으면 비율 검사는 하지 않음 (행사가 몇 개 없을 때 오작동 방지)
 
 
 def clean(v):
@@ -219,6 +228,44 @@ def dump_index(events):
     return "[\n  " + ",\n  ".join(lines) + "\n]\n"
 
 
+def check_removal(removed, sched, old_live_count, not_ended, a):
+    """지워질 행사를 보고 '잘못 받은 엑셀' 같으면 중단한다. --force 면 통과, --dry-run 이면 경고만."""
+    live = [e for e in removed if not_ended(e)]   # 아직 안 끝났는데 엑셀에 없는 행사
+    if not live:
+        return
+    sched_last = max(s["start"] for s in sched)
+    outside = [e for e in live if e["start"] > sched_last]    # 엑셀 기간 밖 → 기간을 좁게 받은 경우
+    inside = [e for e in live if e["start"] <= sched_last]    # 엑셀 기간 안인데 빠짐 → 필터를 건 경우
+    videos = [e for e in live if config_has_videos(e["id"])]
+
+    problems = []
+    if len(outside) >= OUTSIDE_LIMIT:
+        problems.append((f"엑셀의 마지막 행사일({sched_last})보다 뒤에 있는 행사 {len(outside)}개가 지워집니다. "
+                         "다운로드할 때 기간을 좁게 받은 것 같습니다.", outside))
+    if len(inside) >= BULK_MIN and old_live_count and len(inside) / old_live_count >= BULK_RATIO:
+        problems.append((f"엑셀 기간 안에 있던 행사 {old_live_count}개 중 {len(inside)}개가 엑셀에서 빠졌습니다. "
+                         "분류/분야 필터를 건 채로 다운로드한 것 같습니다.", inside))
+    if videos:
+        problems.append((f"영상이 연결된 행사 {len(videos)}개가 아직 안 끝났는데 지워집니다.", videos))
+    if not problems:
+        return
+
+    head = "[경고]" if (a.force or a.dry_run) else "[중단]"
+    for msg, lst in problems:
+        print(f"\n{head} {msg}")
+        for e in lst[:10]:
+            print(f"    - {e['start']}  {e['name']}  ({e['id']})")
+        if len(lst) > 10:
+            print(f"    ... 외 {len(lst) - 10}개")
+    if a.force:
+        print("\n--force 로 실행해서 그대로 반영합니다.")
+    elif a.dry_run:
+        print("\n(--dry-run 이라 멈추지 않고 계속 보여줍니다. 실제 실행이면 여기서 중단됩니다.)")
+    else:
+        sys.exit("\n아무 파일도 바꾸지 않았습니다. 엑셀을 다시 받아 올리거나, 의도한 것이면 --force 로 실행하세요.\n"
+                 "(GitHub: Actions 탭 > Update events > Run workflow > force 체크)")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("xls", nargs="?")
@@ -231,6 +278,8 @@ def main():
                     help="--replace 일 때, 엑셀에 없는 행사는 영상 연결이 있어도 예외 없이 삭제 (삭제된 영상 연결은 로그에 남김)")
     ap.add_argument("--expire-days", type=int, default=EXPIRE_DAYS,
                     help="--replace 일 때, 영상 연결이 있는 행사도 종료 후 이 일수가 지나면 정리 (0 이면 끔)")
+    ap.add_argument("--force", action="store_true",
+                    help="안전장치(잘못 받은 엑셀 감지)를 무시하고 그대로 반영")
     a = ap.parse_args()
 
     xls = find_xls(a.xls)
@@ -244,6 +293,9 @@ def main():
     with open(INDEX_PATH, encoding="utf-8") as f:
         events = json.load(f)
     old_count = len(events)
+    today_iso = datetime.date.today().isoformat()
+    not_ended = lambda e: (e.get("end") or e.get("start") or "") >= today_iso
+    old_live_count = sum(1 for e in events if not_ended(e))   # [안전장치] 갱신 전, 아직 안 끝난 행사 수
     num = next_number(events)
 
     matched = {}   # 기존 행사 id -> sched 인덱스
@@ -338,6 +390,9 @@ def main():
                     forced_ids.add(e["id"])
         gone = {e["id"] for e in removed}
         events = [e for e in events if e["id"] not in gone]
+
+        # ── [안전장치] 잘못 받은 엑셀이면 여기서 멈춘다 (아직 아무 파일도 바꾸지 않은 시점) ──
+        check_removal(removed, sched, old_live_count, not_ended, a)
 
     events.sort(key=lambda e: e["start"])  # 같은 날짜끼리는 기존 순서 유지
 
